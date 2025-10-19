@@ -1,10 +1,3 @@
-/* Minimal native-style mappings for commonly used Tailwind utilities.
-   This file provides basic equivalents so existing className strings
-   using Tailwind utilities still get styled without changing JSX.
-
-   It's intentionally small and covers common layout/spacing/typography
-   utilities used across the app. Add more mappings as needed.
-*/
 
 :root {
     --container-max-width: 1280px;
