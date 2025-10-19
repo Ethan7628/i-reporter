@@ -127,7 +127,7 @@ const NewReport = () => {
 
       <main className="container page-content max-width-md">
         <Button variant="ghost" asChild className="mb-4">
-          <Link to="/dashboard"><ArrowLeft className="icon-left" />Back to Dashboard</Link>
+          <Link to="/dashboard"><ArrowLeft className="icon-left" /></Link>
         </Button>
 
         <Card>

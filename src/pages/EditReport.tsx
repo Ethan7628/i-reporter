@@ -131,12 +131,12 @@ const EditReport = () => {
         location: formData.location,
         images,
       });
-      
+
       toast({
         title: "Report updated!",
         description: "Your changes have been saved.",
       });
-      
+
       navigate('/dashboard');
     } catch (error: unknown) {
       let message = "Please check your input";
@@ -166,9 +166,10 @@ const EditReport = () => {
 
       <main className="container page-content max-width-md">
         <Button variant="ghost" asChild className="mb-4">
-          <Link to="/dashboard"><ArrowLeft className="icon-left" />Back to Dashboard</Link>
+          <Link to="/dashboard">
+            <ArrowLeft className="icon-left" />
+          </Link>
         </Button>
-
         <Card>
           <CardHeader>
             <CardTitle>Edit Report</CardTitle>

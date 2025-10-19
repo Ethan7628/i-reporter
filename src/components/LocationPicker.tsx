@@ -27,10 +27,10 @@ function LocationMarker({ onLocationChange }: { onLocationChange: (location: { l
 export function LocationPicker({ location, onLocationChange }: LocationPickerProps) {
   const defaultCenter = location 
     ? ([location.lat, location.lng] as [number, number])
-    : ([-1.2921, 36.8219] as [number, number]); // Nairobi, Kenya as default
+    : ([ 0.3075, 32.5830] as [number, number]); // Nairobi, Kenya as default
 
   return (
-    <div className="h-[400px] w-full rounded-lg overflow-hidden border">
+    <div className="map-container" style={{ height: '300px', width: '100%' }}>
       <MapContainer
         {...{ center: defaultCenter, zoom: 13, scrollWheelZoom: true } as any}
         style={{ height: '100%', width: '100%' }}
