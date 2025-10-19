@@ -74,7 +74,7 @@ const Dashboard = () => {
             </div>
             <div className="header-actions">
               <span className="user-info">{user.firstName} {user.lastName}{user.role === 'admin' && <Badge className="ml-2" variant="secondary">Admin</Badge>}</span>
-              {user.role === 'admin' && <Button variant="outline" asChild><Link to="/admin">Admin Panel</Link></Button>}
+              {user.role === 'admin' && <Button variant="outline" asChild><Link to="/admin" className="adminBtn">Admin Panel</Link></Button>}
               <Button variant="ghost" size="icon" onClick={handleLogout}><LogOut className="h-5 w-5" /></Button>
             </div>
           </div>
@@ -89,7 +89,7 @@ const Dashboard = () => {
           </div>
           <div>
             <Button asChild>
-              <Link to="/report/new"><Plus className="icon-left" />New Report</Link>
+              <Link to="/report/new" className="newReport-btn"><Plus className="icon-left" />New Report</Link>
             </Button>
           </div>
         </div>
@@ -100,7 +100,7 @@ const Dashboard = () => {
               <Shield className="empty-icon" />
               <h3 className="empty-title">No reports yet</h3>
               <p className="empty-subtext">Create your first report to start making a difference</p>
-              <Button asChild><Link to="/report/new">Create Report</Link></Button>
+              <Button asChild><Link to="/report/new" className="createReport-btn">Create Report</Link></Button>
             </CardContent>
           </Card>
         ) : (

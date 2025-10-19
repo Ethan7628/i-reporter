@@ -101,7 +101,7 @@ const Auth = () => {
               <Input id="password" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required />
             </div>
 
-            <Button type="submit" className="btn-full">{mode === 'login' ? 'Sign In' : 'Create Account'}</Button>
+            <Button type="submit" className="auth-btn">{mode === 'login' ? 'Sign In' : 'Create Account'}</Button>
           </form>
 
           <div className="auth-footer">

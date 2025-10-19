@@ -14,10 +14,10 @@ const Landing = () => {
           </div>
           <div className="nav-actions">
             <Button variant="outline" asChild>
-              <Link to="/auth">Login</Link>
+              <Link to="/auth" className="login-Btn">Login</Link>
             </Button>
             <Button asChild>
-              <Link to="/auth?mode=signup">Sign Up</Link>
+              <Link to="/auth?mode=signup" className="signUp-Btn">Sign Up</Link>
             </Button>
           </div>
         </div>
@@ -30,7 +30,7 @@ const Landing = () => {
             <h2 className="hero-title">Your Voice Against Corruption</h2>
             <p className="hero-subtext">Report corruption incidents and request government intervention to build a transparent, accountable society.</p>
             <Button size="lg" asChild>
-              <Link to="/auth?mode=signup">Get Started</Link>
+              <Link to="/auth?mode=signup" className="cta-Btn">Get Started</Link>
             </Button>
           </div>
         </section>
@@ -38,9 +38,9 @@ const Landing = () => {
         {/* Features */}
         <section className="features-section">
           <div className="container">
-            <h3 className="text-3xl font-bold text-center mb-12">How It Works</h3>
+            <h3 className="features-title">How It Works</h3>
             <div className="features-grid">
-              <div className="feature-item">
+              <div className="feature-card">
                 <div className="feature-icon">
                   <AlertTriangle className="h-8 w-8 text-destructive" />
                 </div>
@@ -48,7 +48,7 @@ const Landing = () => {
                 <p className="feature-desc">Flag corruption incidents with evidence and location data</p>
               </div>
 
-              <div className="feature-item">
+              <div className="feature-card">
                 <div className="feature-icon">
                   <FileCheck className="h-8 w-8 text-secondary" />
                 </div>
@@ -56,7 +56,7 @@ const Landing = () => {
                 <p className="feature-desc">Request government action on infrastructure and services</p>
               </div>
 
-              <div className="feature-item">
+              <div className="feature-card">
                 <div className="feature-icon">
                   <MapPin className="h-8 w-8 text-primary" />
                 </div>
@@ -64,7 +64,7 @@ const Landing = () => {
                 <p className="feature-desc">Attach precise geolocation to every report</p>
               </div>
 
-              <div className="feature-item">
+              <div className="feature-card">
                 <div className="feature-icon">
                   <Shield className="h-8 w-8 text-accent" />
                 </div>
@@ -81,7 +81,7 @@ const Landing = () => {
             <h3 className="cta-title">Ready to Make a Difference?</h3>
             <p className="cta-desc">Join thousands of citizens working towards a corruption-free society.</p>
             <Button size="lg" variant="secondary" asChild>
-              <Link to="/auth?mode=signup">Create Your Account</Link>
+              <Link to="/auth?mode=signup" className="cta-Btn">Create Your Account</Link>
             </Button>
           </div>
         </section>
