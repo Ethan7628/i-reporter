@@ -138,10 +138,14 @@ const EditReport = () => {
       });
       
       navigate('/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      let message = "Please check your input";
+      if (error instanceof Error) {
+        message = error.message;
+      }
       toast({
         title: "Update failed",
-        description: error.message || "Please check your input",
+        description: message,
         variant: "destructive",
       });
     }

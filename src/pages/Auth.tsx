@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { mockAuth, loginSchema, signupSchema } from "@/lib/mock-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Shield } from "lucide-react";
+import { ZodError } from "zod";
 import { Link } from "react-router-dom";
 
 const Auth = () => {
@@ -69,10 +70,18 @@ const Auth = () => {
           navigate('/dashboard');
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      let description = "Please check your input";
+
+      if (error instanceof ZodError) {
+        description = error.errors?.[0]?.message ?? description;
+      } else if (error instanceof Error) {
+        description = error.message || description;
+      }
+
       toast({
         title: "Validation error",
-        description: error.errors?.[0]?.message || "Please check your input",
+        description,
         variant: "destructive",
       });
     }

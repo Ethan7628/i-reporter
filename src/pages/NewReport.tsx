@@ -93,10 +93,20 @@ const NewReport = () => {
       });
       
       navigate('/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      let message = "Please check your input";
+      type ValidationError = { errors: { message?: string }[] };
+      if (
+        error &&
+        typeof error === "object" &&
+        "errors" in error &&
+        Array.isArray((error as ValidationError).errors)
+      ) {
+        message = (error as ValidationError).errors?.[0]?.message || message;
+      }
       toast({
         title: "Validation error",
-        description: error.errors?.[0]?.message || "Please check your input",
+        description: message,
         variant: "destructive",
       });
     }

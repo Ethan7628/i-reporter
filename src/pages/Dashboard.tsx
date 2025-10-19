@@ -48,10 +48,14 @@ const Dashboard = () => {
         title: "Report deleted",
         description: "Your report has been removed",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      let message = "An error occurred";
+      if (error instanceof Error) {
+        message = error.message;
+      }
       toast({
         title: "Cannot delete",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     }

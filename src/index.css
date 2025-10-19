@@ -78,10 +78,12 @@ All colors MUST be HSL.
 
 @layer base {
   * {
-    @apply border-border;
+    /* apply a default border color using the design token */
+    border-color: hsl(var(--border));
   }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }
