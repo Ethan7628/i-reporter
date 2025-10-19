@@ -1,81 +1,78 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 215 25% 27%;
+    --background: 210 20% 98%;
+    --foreground: 222 22% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 27%;
+    --card-foreground: 222 22% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 27%;
+    --popover-foreground: 222 22% 15%;
 
-    --primary: 215 60% 25%;
+    --primary: 222 47% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 142 52% 45%;
+    --secondary: 142 52% 55%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 210 16% 93%;
+    --muted-foreground: 215 16% 35%;
 
-    --accent: 142 52% 45%;
+    --accent: 142 52% 55%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 62% 65%;
     --destructive-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 38 92% 55%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 215 60% 25%;
-
-    --radius: 0.5rem;
+    --border: 210 16% 85%;
+    --input: 210 16% 85%;
+    --ring: 222 47% 65%;
   }
+  
 
   .dark {
-    --background: 215 25% 15%;
-    --foreground: 0 0% 98%;
+    --background: 222 22% 15%;
+    --foreground: 210 20% 98%;
 
-    --card: 215 25% 18%;
-    --card-foreground: 0 0% 98%;
+    --card: 222 22% 15%;
+    --card-foreground: 210 20% 98%;
 
-    --popover: 215 25% 18%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 222 22% 15%;
+    --popover-foreground: 210 20% 98%;
 
-    --primary: 215 60% 40%;
+    --primary: 222 47% 65%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 142 52% 35%;
+    --secondary: 142 52% 65%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 215 25% 25%;
+    --muted: 210 16% 25%;
     --muted-foreground: 215 16% 65%;
 
-    --accent: 142 52% 35%;
+    --accent: 142 52% 65%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62% 45%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 62% 75%;
+    --destructive-foreground: 0, 0%, 100%;
 
-    --warning: 38 92% 40%;
+    --warning: 38 92% 65%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 215 25% 25%;
-    --input: 215 25% 25%;
-    --ring: 215 60% 50%;
+    --border: 222 22% 25%;
+    --input: 222 22% 25%;
+    --ring: 222 47% 65%;
   }
 }
 
 @layer base {
   * {
-    /* apply a default border color using the design token */
     border-color: hsl(var(--border));
   }
-
-  body {
+ body{
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
   }
