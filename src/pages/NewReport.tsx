@@ -115,22 +115,19 @@ const NewReport = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-2">
+    <div className="page-root">
+      <header className="site-header">
+        <div className="container header-inner">
+          <div className="brand">
             <Shield className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold text-primary">iReporter</h1>
+            <h1 className="brand-title">iReporter</h1>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
+      <main className="container page-content max-width-md">
         <Button variant="ghost" asChild className="mb-4">
-          <Link to="/dashboard">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Link>
+          <Link to="/dashboard"><ArrowLeft className="icon-left" />Back to Dashboard</Link>
         </Button>
 
         <Card>

@@ -60,16 +60,16 @@ const Admin = () => {
   if (!user || user.role !== 'admin') return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b sticky top-0 bg-background z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
+    <div className="admin-root">
+      <header className="site-header admin-header">
+        <div className="container header-inner">
+          <div className="header-row">
+            <div className="brand">
               <Shield className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-bold text-primary">iReporter Admin</h1>
+              <h1 className="brand-title">iReporter Admin</h1>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
+            <div className="header-actions">
+              <span className="user-info">
                 {user.firstName} {user.lastName}
                 <Badge className="ml-2" variant="secondary">Admin</Badge>
               </span>
@@ -84,54 +84,41 @@ const Admin = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">All Reports</h2>
-          <p className="text-muted-foreground">
-            Manage and update the status of all citizen reports
-          </p>
+      <main className="container page-content admin-content">
+        <div className="page-header">
+          <h2 className="page-title">All Reports</h2>
+          <p className="page-subtext">Manage and update the status of all citizen reports</p>
         </div>
 
         {reports.length === 0 ? (
           <Card>
-            <CardContent className="py-16 text-center">
-              <Shield className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No reports yet</h3>
-              <p className="text-muted-foreground">
-                Reports will appear here as citizens submit them
-              </p>
+            <CardContent className="empty-state">
+              <Shield className="empty-icon" />
+              <h3 className="empty-title">No reports yet</h3>
+              <p className="empty-subtext">Reports will appear here as citizens submit them</p>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4">
+          <div className="reports-list">
             {reports.map((report) => (
-              <Card key={report.id}>
+              <Card key={report.id} className="report-card">
                 <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
+                  <div className="report-row">
+                    <div className="report-main">
+                      <div className="report-meta">
                         {report.type === 'red-flag' ? (
-                          <AlertTriangle className="h-5 w-5 text-destructive" />
+                          <AlertTriangle className="icon-destructive" />
                         ) : (
-                          <FileCheck className="h-5 w-5 text-secondary" />
+                          <FileCheck className="icon-secondary" />
                         )}
-                        <Badge variant="outline" className="capitalize">
-                          {report.type}
-                        </Badge>
-                        <Badge className={statusColors[report.status]}>
-                          {report.status}
-                        </Badge>
+                        <Badge variant="outline" className="report-type">{report.type}</Badge>
+                        <Badge className={statusColors[report.status]}>{report.status}</Badge>
                       </div>
                       <CardTitle>{report.title}</CardTitle>
-                      <CardDescription className="mt-2">
-                        {report.description.substring(0, 200)}...
-                      </CardDescription>
+                      <CardDescription className="report-desc">{report.description.substring(0, 200)}...</CardDescription>
                     </div>
-                    <div className="min-w-[200px]">
-                      <Select
-                        value={report.status}
-                        onValueChange={(value) => handleStatusChange(report.id, value as ReportStatus)}
-                      >
+                    <div className="report-controls">
+                      <Select value={report.status} onValueChange={(value) => handleStatusChange(report.id, value as ReportStatus)}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -146,22 +133,20 @@ const Admin = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
+                  <div className="report-details">
                     {report.location && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="report-location">
                         <MapPin className="h-4 w-4" />
-                        <span>
-                          Location: {report.location.lat.toFixed(4)}, {report.location.lng.toFixed(4)}
-                        </span>
+                        <span>Location: {report.location.lat.toFixed(4)}, {report.location.lng.toFixed(4)}</span>
                       </div>
                     )}
                     {report.images.length > 0 && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="report-images">
                         <ImageIcon className="h-4 w-4" />
                         <span>{report.images.length} image(s) attached</span>
                       </div>
                     )}
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="report-meta-small">
                       <span>Created: {new Date(report.createdAt).toLocaleString()}</span>
                       <span>Updated: {new Date(report.updatedAt).toLocaleString()}</span>
                       <span>Report ID: {report.id.substring(0, 8)}</span>
