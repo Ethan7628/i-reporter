@@ -6,6 +6,7 @@
     --fg-color: hsl(var(--foreground));
 }
 
+
 /* Layout */
 .container {
     max-width: var(--container-max-width);

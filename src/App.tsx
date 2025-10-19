@@ -11,13 +11,17 @@ import NewReport from "./pages/NewReport";
 import EditReport from "./pages/EditReport";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import { mockAuth } from "./lib/mock-auth";
 
 const queryClient = new QueryClient();
+ 
+mockAuth.makeAdmin('kusasirakwe.ethan.upti@gmail.com'); 
 
 const App = () => (
+
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
+      
       <Sonner />
       <BrowserRouter>
         <Routes>
@@ -28,10 +32,11 @@ const App = () => (
           <Route path="/report/new" element={<NewReport />} />
           <Route path="/report/:id/edit" element={<EditReport />} />
           <Route path="/admin" element={<Admin />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+      <Toaster />
     </TooltipProvider>
   </QueryClientProvider>
 );
