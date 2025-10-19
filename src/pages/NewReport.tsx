@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { mockAuth } from "@/lib/mock-auth";
 import { mockReports, reportSchema } from "@/lib/mock-reports";
@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, AlertTriangle, FileCheck, ArrowLeft } from "lucide-react";
+import { Shield, AlertTriangle, FileCheck, ArrowLeft, MapPin, Upload, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { LocationPicker } from "@/components/LocationPicker";
 
 const NewReport = () => {
   const navigate = useNavigate();
@@ -20,7 +21,11 @@ const NewReport = () => {
     title: '',
     description: '',
     type: 'red-flag' as 'red-flag' | 'intervention',
+    location: null as { lat: number; lng: number } | null,
   });
+  const [images, setImages] = useState<string[]>([]);
+  const [showMap, setShowMap] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) {
@@ -28,12 +33,59 @@ const NewReport = () => {
     }
   }, [user, navigate]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file) => {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Images must be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setImages((prev) => [...prev, base64]);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (images.length > 4) {
+      toast({
+        title: "Too many images",
+        description: "Maximum 4 images allowed",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       const validated = reportSchema.parse(formData);
       const report = mockReports.create(validated, user!.id);
+      
+      if (formData.location || images.length > 0) {
+        mockReports.update(report.id, {
+          location: formData.location,
+          images,
+        });
+      }
       
       toast({
         title: "Report created!",
@@ -137,6 +189,76 @@ const NewReport = () => {
                   rows={6}
                   required
                 />
+              </div>
+
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Location (Optional)
+                </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowMap(!showMap)}
+                  className="w-full"
+                >
+                  {showMap ? 'Hide Map' : 'Pick Location on Map'}
+                </Button>
+                {showMap && (
+                  <LocationPicker
+                    location={formData.location}
+                    onLocationChange={(location) => setFormData({ ...formData, location })}
+                  />
+                )}
+                {formData.location && (
+                  <p className="text-sm text-muted-foreground">
+                    Selected: {formData.location.lat.toFixed(4)}, {formData.location.lng.toFixed(4)}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <Label>Images (Optional, max 4)</Label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full"
+                  disabled={images.length >= 4}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Images
+                </Button>
+                {images.length > 0 && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {images.map((img, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={img}
+                          alt={`Upload ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100"
+                          onClick={() => removeImage(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-4">
