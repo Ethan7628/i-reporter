@@ -1,16 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { mockAuth } from "@/lib/mock-auth";
 import { mockReports, reportSchema } from "@/lib/mock-reports";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, AlertTriangle, FileCheck, ArrowLeft, MapPin, Upload, X } from "lucide-react";
-import { Link } from "react-router-dom";
 import { LocationPicker } from "@/components/LocationPicker";
 
 const NewReport = () => {
@@ -125,160 +118,172 @@ const NewReport = () => {
         </div>
       </header>
 
-      <main className="container page-content max-width-md">
-        <Button variant="ghost" asChild className="mb-4">
-          <Link to="/dashboard"><ArrowLeft className="icon-left" /></Link>
-        </Button>
+      <main className="container page-content">
+        <div className="form-container">
+          <Link to="/dashboard" className="back-link">
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Dashboard</span>
+          </Link>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Create New Report</CardTitle>
-            <CardDescription>
-              Report corruption or request government intervention
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-3">
-                <Label>Report Type</Label>
-                <RadioGroup
-                  value={formData.type}
-                  onValueChange={(value) => 
-                    setFormData({ ...formData, type: value as 'red-flag' | 'intervention' })
-                  }
-                >
-                  <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-accent">
-                    <RadioGroupItem value="red-flag" id="red-flag" />
-                    <Label htmlFor="red-flag" className="flex items-center gap-2 cursor-pointer flex-1">
-                      <AlertTriangle className="h-5 w-5 text-destructive" />
-                      <div>
-                        <div className="font-semibold">Red-Flag</div>
-                        <div className="text-sm text-muted-foreground">
-                          Report corruption incidents
-                        </div>
-                      </div>
-                    </Label>
+          <div className="page-header">
+            <h2 className="page-title">Create New Report</h2>
+            <p className="page-subtext">Report corruption or request government intervention</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="report-form">
+            {/* Report Type Selection */}
+            <div className="form-section">
+              <label className="form-label">Report Type *</label>
+              <div className="radio-group">
+                <label className="radio-option">
+                  <input
+                    type="radio"
+                    name="type"
+                    value="red-flag"
+                    checked={formData.type === 'red-flag'}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as 'red-flag' | 'intervention' })}
+                  />
+                  <div className="radio-option-content">
+                    <div className="radio-option-icon">
+                      <AlertTriangle className="h-5 w-5" style={{ color: 'hsl(var(--destructive))' }} />
+                    </div>
+                    <div className="radio-option-text">
+                      <div className="radio-option-title">Red-Flag</div>
+                      <div className="radio-option-desc">Report corruption incidents</div>
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center space-x-2 border rounded-lg p-4 cursor-pointer hover:bg-accent">
-                    <RadioGroupItem value="intervention" id="intervention" />
-                    <Label htmlFor="intervention" className="flex items-center gap-2 cursor-pointer flex-1">
-                      <FileCheck className="h-5 w-5 text-secondary" />
-                      <div>
-                        <div className="font-semibold">Intervention</div>
-                        <div className="text-sm text-muted-foreground">
-                          Request government action
-                        </div>
-                      </div>
-                    </Label>
+                </label>
+
+                <label className="radio-option">
+                  <input
+                    type="radio"
+                    name="type"
+                    value="intervention"
+                    checked={formData.type === 'intervention'}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as 'red-flag' | 'intervention' })}
+                  />
+                  <div className="radio-option-content">
+                    <div className="radio-option-icon">
+                      <FileCheck className="h-5 w-5" style={{ color: 'hsl(var(--secondary))' }} />
+                    </div>
+                    <div className="radio-option-text">
+                      <div className="radio-option-title">Intervention</div>
+                      <div className="radio-option-desc">Request government action</div>
+                    </div>
                   </div>
-                </RadioGroup>
+                </label>
               </div>
+            </div>
 
-              <div>
-                <Label htmlFor="title">Title *</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Brief description of the issue (min 10 characters)"
-                  required
-                />
-              </div>
+            {/* Title Input */}
+            <div className="form-section">
+              <label htmlFor="title" className="form-label">Title *</label>
+              <input
+                id="title"
+                type="text"
+                className="form-input"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Brief description of the issue (min 10 characters)"
+                required
+              />
+            </div>
 
-              <div>
-                <Label htmlFor="description">Description *</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Provide detailed information about the incident or intervention needed (min 20 characters)"
-                  rows={6}
-                  required
-                />
-              </div>
+            {/* Description Textarea */}
+            <div className="form-section">
+              <label htmlFor="description" className="form-label">Description *</label>
+              <textarea
+                id="description"
+                className="form-textarea"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Provide detailed information about the incident or intervention needed (min 20 characters)"
+                rows={6}
+                required
+              />
+            </div>
 
-              <div className="space-y-3">
-                <Label className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  Location (Optional)
-                </Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowMap(!showMap)}
-                  className="w-full"
-                >
-                  {showMap ? 'Hide Map' : 'Pick Location on Map'}
-                </Button>
-                {showMap && (
+            {/* Location Picker */}
+            <div className="form-section">
+              <label className="form-label form-label-icon">
+                <MapPin className="h-4 w-4" />
+                <span>Location (Optional)</span>
+              </label>
+              <button
+                type="button"
+                className="btn btn-outline btn-full"
+                onClick={() => setShowMap(!showMap)}
+              >
+                {showMap ? 'Hide Map' : 'Pick Location on Map'}
+              </button>
+              {showMap && (
+                <div style={{ marginTop: 'var(--spacing-3)' }}>
                   <LocationPicker
                     location={formData.location}
                     onLocationChange={(location) => setFormData({ ...formData, location })}
                   />
-                )}
-                {formData.location && (
-                  <p className="text-sm text-muted-foreground">
-                    Selected: {formData.location.lat.toFixed(4)}, {formData.location.lng.toFixed(4)}
-                  </p>
-                )}
-              </div>
+                </div>
+              )}
+              {formData.location && (
+                <p className="form-hint">
+                  Selected: {formData.location.lat.toFixed(4)}, {formData.location.lng.toFixed(4)}
+                </p>
+              )}
+            </div>
 
-              <div className="space-y-3">
-                <Label>Images (Optional, max 4)</Label>
+            {/* Image Upload */}
+            <div className="form-section">
+              <label className="form-label">Images (Optional, max 4)</label>
+              <div className="image-upload-container">
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   multiple
                   onChange={handleFileChange}
-                  className="hidden"
+                  style={{ display: 'none' }}
                 />
-                <Button
+                <button
                   type="button"
-                  variant="outline"
+                  className="btn btn-outline btn-full"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full"
                   disabled={images.length >= 4}
                 >
-                  <Upload className="mr-2 h-4 w-4" />
+                  <Upload className="h-4 w-4" style={{ marginRight: 'var(--spacing-2)' }} />
                   Upload Images
-                </Button>
+                </button>
+                
                 {images.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="image-grid">
                     {images.map((img, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={img}
-                          alt={`Upload ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-lg"
-                        />
-                        <Button
+                      <div key={index} className="image-preview">
+                        <img src={img} alt={`Upload ${index + 1}`} />
+                        <button
                           type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100"
+                          className="image-remove-btn"
                           onClick={() => removeImage(index)}
+                          aria-label="Remove image"
                         >
                           <X className="h-4 w-4" />
-                        </Button>
+                        </button>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
+            </div>
 
-              <div className="flex gap-4">
-                <Button type="submit" className="flex-1">
-                  Create Report
-                </Button>
-                <Button type="button" variant="outline" asChild>
-                  <Link to="/dashboard">Cancel</Link>
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+            {/* Form Actions */}
+            <div className="form-actions">
+              <button type="submit" className="btn btn-primary">
+                Create Report
+              </button>
+              <Link to="/dashboard" className="btn btn-outline">
+                Cancel
+              </Link>
+            </div>
+          </form>
+        </div>
       </main>
     </div>
   );
