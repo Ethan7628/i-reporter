@@ -122,7 +122,6 @@ const NewReport = () => {
         <div className="form-container unique-form">
           <Link to="/dashboard" className="back-link">
             <ArrowLeft className="h-4 w-4" />
-            <span>Back to Dashboard</span>
           </Link>
 
           <div className="page-header form-hero">
