@@ -462,13 +462,14 @@ button:focus-visible {
 /* HERO SECTION*/
 
 .hero-section {
+  display: flex;
   background-color: var(--color-primary);
   color: var(--color-white);
   padding: var(--space-16) 0;
   text-align: center;
   position: relative;
   overflow: hidden;
-  height: 100vh;
+  height: 90vh;
   align-content: center;
 }
 
@@ -483,6 +484,7 @@ button:focus-visible {
   margin: 0 auto;
   position: relative;
   z-index: 1;
+  align-items: center;
 }
 
 .hero-title {
