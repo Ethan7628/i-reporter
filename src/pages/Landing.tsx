@@ -80,7 +80,7 @@ const Landing = () => {
           <div className="container text-center">
             <h3 className="cta-title">Ready to Make a Difference?</h3>
             <p className="cta-desc">Join thousands of citizens working towards a corruption-free society.</p>
-            <Button size="lg" variant="secondary" asChild>
+            <Button size="lg"  asChild>
               <Link to="/auth?mode=signup" className="cta-Btn">Create Your Account</Link>
             </Button>
           </div>
