@@ -1571,8 +1571,8 @@ textarea,
 .form-field {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  margin-bottom: var(--space-4);
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
 }
 
 .form-field label {
