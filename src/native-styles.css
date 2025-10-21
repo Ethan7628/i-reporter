@@ -1566,3 +1566,36 @@ textarea,
     display: none;
   }
 }
+
+/* Form field helpers (used by Auth forms) */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.form-field label {
+  font-size: var(--text-sm);
+  color: var(--color-gray-700);
+  font-weight: var(--font-medium);
+}
+
+.form-field input,
+.form-field .input,
+.form-field .radix-input {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.form-field input:focus,
+.form-field .input:focus,
+.form-field .radix-input:focus {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-color: var(--color-primary);
+}

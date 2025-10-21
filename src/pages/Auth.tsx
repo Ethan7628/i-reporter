@@ -80,23 +80,23 @@ const Auth = () => {
           <form onSubmit={handleSubmit} className="form-stack">
             {mode === 'signup' && (
               <>
-                <div>
+                <div className="form-field">
                   <Label htmlFor="firstName">First Name</Label>
                   <Input id="firstName" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} required />
                 </div>
-                <div>
+                <div className="form-field">
                   <Label htmlFor="lastName">Last Name</Label>
                   <Input id="lastName" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} required />
                 </div>
               </>
             )}
 
-            <div>
+            <div className="form-field">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
             </div>
 
-            <div>
+            <div className="form-field">
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required />
             </div>
