@@ -26,6 +26,7 @@ const Landing = () => {
       <main>
         {/* Hero */}
         <section className="hero-section">
+          <img src="./public/Digital News Alert in Teal.png" alt="" />
           <div className="container hero-inner">
             <h2 className="hero-title">Your Voice Against Corruption</h2>
             <p className="hero-subtext">Report corruption incidents and request government intervention to build a transparent, accountable society.</p>
