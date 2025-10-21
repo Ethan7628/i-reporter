@@ -1,11 +1,6 @@
-/* ============================================
-   iREPORTER DESIGN SYSTEM - CIVIC MODERN PALETTE
-   Mobile-First, Trustworthy, Professional
-   ============================================ */
-
 :root {
-  /* ==================== COLOR PALETTE - CIVIC MODERN ==================== */
-  /* Primary Colors - Teal (Trust & Civic) */
+
+  /* Primary Colors - Teal */
   --color-primary: #007B83;
   --color-primary-hover: #005C66;
   --color-primary-light: #E0F7F8;
@@ -142,10 +137,6 @@
   --z-tooltip: 1070;
 }
 
-/* ============================================
-   GLOBAL STYLES & RESETS
-   ============================================ */
-
 *,
 *::before,
 *::after {
@@ -185,9 +176,7 @@ input, textarea, select {
   font-family: inherit;
 }
 
-/* ============================================
-   LAYOUT CONTAINERS
-   ============================================ */
+/* LAYOUT CONTAINERS */
 
 .container {
   max-width: 1200px;
@@ -215,15 +204,12 @@ input, textarea, select {
 .dashboard-root,
 .admin-root,
 .page-root {
-  min-height: 100vh;
   background-color: var(--color-gray-50);
   display: flex;
   flex-direction: column;
 }
 
-/* ============================================
-   HEADER & NAVIGATION
-   ============================================ */
+/* HEADER & NAVIGATION*/
 
 .site-header,
 .admin-header {
@@ -305,9 +291,7 @@ input, textarea, select {
   border-radius: var(--radius-md);
 }
 
-/* ============================================
-   BUTTON SYSTEM
-   ============================================ */
+/* BUTTON SYSTEM */
 
 /* Base Button Styles */
 .btn,
@@ -475,9 +459,7 @@ button:focus-visible {
   box-shadow: var(--shadow-focus);
 }
 
-/* ============================================
-   HERO SECTION
-   ============================================ */
+/* HERO SECTION*/
 
 .hero-section {
   background-color: var(--color-primary);
@@ -486,6 +468,8 @@ button:focus-visible {
   text-align: center;
   position: relative;
   overflow: hidden;
+  height: 100vh;
+  align-content: center;
 }
 
 @media (min-width: 768px) {
