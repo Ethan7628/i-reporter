@@ -81,13 +81,13 @@ const Auth = () => {
             {mode === 'signup' && (
               <>
                 <div className="form-field">
-                  <Label htmlFor="firstName">First Name</Label>
+                  <Label htmlFor="firstName"> Name</Label>
                   <Input id="firstName" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} required />
                 </div>
-                <div className="form-field">
+                {/* <div className="form-field">
                   <Label htmlFor="lastName">Last Name</Label>
                   <Input id="lastName" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} required />
-                </div>
+                </div> */}
               </>
             )}
 
