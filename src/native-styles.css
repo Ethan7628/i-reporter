@@ -480,7 +480,7 @@ button:focus-visible {
    ============================================ */
 
 .hero-section {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-info) 100%);
+  background-color: var(--color-primary);
   color: var(--color-white);
   padding: var(--space-16) 0;
   text-align: center;
@@ -642,7 +642,7 @@ button:focus-visible {
 
 .cta-section {
   padding: var(--space-16) 0;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-info) 100%);
+  background-color: var(--color-primary);
   color: var(--color-white);
   text-align: center;
 }
@@ -772,21 +772,46 @@ button:focus-visible {
 .report-card {
   background: var(--color-white);
   border: 2px solid var(--color-gray-200);
-  border-radius: var(--radius-lg);
-  padding: var(--space-6);
+  border-radius: var(--radius-xl);
+  padding: 0;
   transition: all var(--transition-base);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
 @media (min-width: 768px) {
   .report-card {
-    padding: var(--space-8);
+    border-radius: var(--radius-xl);
   }
 }
 
 .report-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-xl);
   border-color: var(--color-primary);
+}
+
+.report-card .card-header {
+  padding: var(--space-6);
+  background: linear-gradient(135deg, var(--color-gray-50) 0%, var(--color-white) 100%);
+  border-bottom: 2px solid var(--color-gray-100);
+}
+
+@media (min-width: 768px) {
+  .report-card .card-header {
+    padding: var(--space-8);
+  }
+}
+
+.report-card .card-content {
+  padding: var(--space-6);
+  background: var(--color-white);
+}
+
+@media (min-width: 768px) {
+  .report-card .card-content {
+    padding: var(--space-8);
+  }
 }
 
 .report-row {
@@ -854,7 +879,7 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  margin-top: var(--space-4);
+  margin-top: 0;
 }
 
 .report-location,
@@ -864,6 +889,73 @@ button:focus-visible {
   gap: var(--space-2);
   color: var(--color-gray-600);
   font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-gray-200);
+}
+
+.report-images-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .report-images-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .report-images-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.report-image-thumbnail {
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 2px solid var(--color-gray-200);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  position: relative;
+}
+
+.report-image-thumbnail:hover {
+  border-color: var(--color-primary);
+  transform: scale(1.02);
+  box-shadow: var(--shadow-md);
+}
+
+.report-image-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.report-image-lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  padding: var(--space-4);
+  cursor: pointer;
+}
+
+.report-image-lightbox img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2xl);
 }
 
 .report-meta-small {
@@ -1068,6 +1160,36 @@ button:focus-visible {
   margin: 0 auto;
 }
 
+/* Unique Form Styling */
+.unique-form {
+  background: var(--color-white);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-xl);
+  border: 2px solid var(--color-gray-200);
+}
+
+@media (min-width: 768px) {
+  .unique-form {
+    padding: var(--space-12);
+  }
+}
+
+.form-hero {
+  text-align: center;
+  padding: var(--space-8);
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-secondary-light) 100%);
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--space-8);
+}
+
+.form-hero-icon {
+  width: 4rem;
+  height: 4rem;
+  color: var(--color-primary);
+  margin: 0 auto var(--space-4);
+}
+
 .form-section,
 .report-form > div {
   margin-bottom: var(--space-6);
@@ -1226,6 +1348,7 @@ textarea,
   padding: var(--space-6);
   background: var(--color-gray-50);
   transition: all var(--transition-base);
+  text-align: center;
 }
 
 .image-upload-container:hover {
@@ -1252,6 +1375,12 @@ textarea,
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 2px solid var(--color-gray-200);
+  transition: all var(--transition-base);
+}
+
+.image-preview:hover {
+  border-color: var(--color-primary);
+  transform: scale(1.02);
 }
 
 .image-preview img {
@@ -1351,58 +1480,62 @@ textarea,
    UTILITY CLASSES
    ============================================ */
 
-.ml-2 {
-  margin-left: var(--space-2);
-}
-
-.h-4 {
-  height: 1rem;
-}
-
-.w-4 {
-  width: 1rem;
-}
-
-.h-5 {
+.icon-left {
+  margin-right: var(--space-2);
+  width: 1.25rem;
   height: 1.25rem;
 }
 
-.w-5 {
+.icon-right {
+  margin-left: var(--space-2);
   width: 1.25rem;
-}
-
-.h-8 {
-  height: 2rem;
-}
-
-.w-8 {
-  width: 2rem;
-}
-
-.h-12 {
-  height: 3rem;
-}
-
-.w-12 {
-  width: 3rem;
-}
-
-.text-primary {
-  color: var(--color-primary);
-}
-
-.text-destructive {
-  color: var(--color-danger);
-}
-
-.text-secondary {
-  color: var(--color-secondary);
-}
-
-.text-accent {
-  color: var(--color-warning);
+  height: 1.25rem;
 }
 
 .text-center {
   text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.ml-2 {
+  margin-left: var(--space-2);
+}
+
+.mt-4 {
+  margin-top: var(--space-4);
+}
+
+.mt-6 {
+  margin-top: var(--space-6);
+}
+
+/* ============================================
+   RESPONSIVE UTILITIES
+   ============================================ */
+
+.hidden-mobile {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .hidden-mobile {
+    display: block;
+  }
+}
+
+.hidden-desktop {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .hidden-desktop {
+    display: none;
+  }
 }

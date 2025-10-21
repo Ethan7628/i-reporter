@@ -119,15 +119,16 @@ const NewReport = () => {
       </header>
 
       <main className="container page-content">
-        <div className="form-container">
+        <div className="form-container unique-form">
           <Link to="/dashboard" className="back-link">
             <ArrowLeft className="h-4 w-4" />
             <span>Back to Dashboard</span>
           </Link>
 
-          <div className="page-header">
+          <div className="page-header form-hero">
+            <Shield className="form-hero-icon" />
             <h2 className="page-title">Create New Report</h2>
-            <p className="page-subtext">Report corruption or request government intervention</p>
+            <p className="page-subtext">Help build a transparent society. Your report makes a difference.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="report-form">
