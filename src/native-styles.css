@@ -1153,7 +1153,7 @@ button:focus-visible {
 }
 
 .back-link {
-  margin-top: var(--space-4);
+  margin-bottom: var(--space-5);
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
