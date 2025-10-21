@@ -141,10 +141,19 @@ const Admin = () => {
                       </div>
                     )}
                     {report.images.length > 0 && (
-                      <div className="report-images">
-                        <ImageIcon className="h-4 w-4" />
-                        <span>{report.images.length} image(s) attached</span>
-                      </div>
+                      <>
+                        <div className="report-images">
+                          <ImageIcon className="h-4 w-4" />
+                          <span>{report.images.length} image(s) attached</span>
+                        </div>
+                        <div className="report-images-grid">
+                          {report.images.map((image, idx) => (
+                            <div key={idx} className="report-image-thumbnail">
+                              <img src={image} alt={`Report evidence ${idx + 1}`} />
+                            </div>
+                          ))}
+                        </div>
+                      </>
                     )}
                     <div className="report-meta-small">
                       <span>Created: {new Date(report.createdAt).toLocaleString()}</span>
