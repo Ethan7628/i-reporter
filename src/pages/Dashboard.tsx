@@ -10,12 +10,14 @@ import { STATUS_COLORS } from "@/utils/constants";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, logout, requireAuth } = useAuth();
+  const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
   const { reports, deleteReport } = useReports(user?.id);
 
   useEffect(() => {
-    requireAuth();
-  }, []);
+    if (!authLoading && !isAuthenticated) {
+      navigate('/auth');
+    }
+  }, [isAuthenticated, authLoading, navigate]);
 
   const handleDelete = async (id: string) => {
     if (user) {
@@ -23,7 +25,17 @@ const Dashboard = () => {
     }
   };
 
-  if (!user) return null;
+  if (authLoading) {
+    return (
+      <div className="dashboard-root">
+        <div className="container" style={{ textAlign: 'center', paddingTop: '4rem' }}>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) return null;
 
   return (
     <div className="dashboard-root">
