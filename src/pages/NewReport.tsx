@@ -11,7 +11,7 @@ import { LocationPicker } from "@/components/LocationPicker";
 const NewReport = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, requireAuth } = useAuth();
   const { createReport, updateReport } = useReports();
   const [formData, setFormData] = useState({
     title: '',
@@ -24,10 +24,8 @@ const NewReport = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate('/auth');
-    }
-  }, [isAuthenticated, authLoading, navigate]);
+    requireAuth();
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -99,17 +97,7 @@ const NewReport = () => {
     }
   };
 
-  if (authLoading) {
-    return (
-      <div className="page-root">
-        <div className="container" style={{ textAlign: 'center', paddingTop: '4rem' }}>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated || !user) return null;
+  if (!user) return null;
 
   return (
     <div className="page-root">
