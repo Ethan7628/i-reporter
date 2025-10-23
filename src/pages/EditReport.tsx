@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { mockAuth } from "@/lib/mock-auth";
-import { mockReports, reportSchema } from "@/lib/mock-reports";
+import { useAuth } from "@/hooks/useAuth";
+import { useReports } from "@/hooks/useReports";
 import { useToast } from "@/hooks/use-toast";
+import { reportSchema, Report } from "@/types";
+import { FILE_CONSTRAINTS, VALIDATION_MESSAGES } from "@/utils/constants";
 import { Shield, ArrowLeft, MapPin, Upload, X } from "lucide-react";
 import { LocationPicker } from "@/components/LocationPicker";
 
@@ -10,7 +12,8 @@ const EditReport = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [user, setUser] = useState(mockAuth.getCurrentUser());
+  const { user, requireAuth } = useAuth();
+  const { getReport, updateReport: updateReportService } = useReports();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -18,66 +21,54 @@ const EditReport = () => {
   });
   const [images, setImages] = useState<string[]>([]);
   const [showMap, setShowMap] = useState(false);
+  const [report, setReport] = useState<Report | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-
-    if (!id) {
+    if (!requireAuth() || !id) {
       navigate('/dashboard');
       return;
     }
 
-    const report = mockReports.getById(id);
-    if (!report) {
-      toast({
-        title: "Report not found",
-        variant: "destructive",
+    const loadReport = async () => {
+      const fetchedReport = await getReport(id);
+      
+      if (!fetchedReport) {
+        navigate('/dashboard');
+        return;
+      }
+
+      if (fetchedReport.userId !== user!.id) {
+        navigate('/dashboard');
+        return;
+      }
+
+      if (['under-investigation', 'rejected', 'resolved'].includes(fetchedReport.status)) {
+        navigate('/dashboard');
+        return;
+      }
+
+      setReport(fetchedReport);
+      setFormData({
+        title: fetchedReport.title,
+        description: fetchedReport.description,
+        location: fetchedReport.location,
       });
-      navigate('/dashboard');
-      return;
-    }
+      setImages(fetchedReport.images || []);
+    };
 
-    if (report.userId !== user.id) {
-      toast({
-        title: "Access denied",
-        description: "You can only edit your own reports",
-        variant: "destructive",
-      });
-      navigate('/dashboard');
-      return;
-    }
-
-    if (['under-investigation', 'rejected', 'resolved'].includes(report.status)) {
-      toast({
-        title: "Cannot edit",
-        description: "This report cannot be edited",
-        variant: "destructive",
-      });
-      navigate('/dashboard');
-      return;
-    }
-
-    setFormData({
-      title: report.title,
-      description: report.description,
-      location: report.location,
-    });
-    setImages(report.images || []);
-  }, [user, id, navigate, toast]);
+    loadReport();
+  }, [id]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
     Array.from(files).forEach((file) => {
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > FILE_CONSTRAINTS.MAX_IMAGE_SIZE) {
         toast({
           title: "File too large",
-          description: "Images must be less than 5MB",
+          description: VALIDATION_MESSAGES.IMAGE_TOO_LARGE,
           variant: "destructive",
         });
         return;
@@ -100,13 +91,15 @@ const EditReport = () => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (images.length > 4) {
+    if (!id || !report) return;
+
+    if (images.length > FILE_CONSTRAINTS.MAX_IMAGES) {
       toast({
         title: "Too many images",
-        description: "Maximum 4 images allowed",
+        description: VALIDATION_MESSAGES.TOO_MANY_IMAGES,
         variant: "destructive",
       });
       return;
@@ -116,19 +109,14 @@ const EditReport = () => {
       const validated = reportSchema.parse({
         title: formData.title,
         description: formData.description,
-        type: mockReports.getById(id!)?.type,
+        type: report.type,
       });
 
-      mockReports.update(id!, {
+      await updateReportService(id, {
         title: validated.title,
         description: validated.description,
         location: formData.location,
         images,
-      });
-
-      toast({
-        title: "Report updated!",
-        description: "Your changes have been saved.",
       });
 
       navigate('/dashboard');
