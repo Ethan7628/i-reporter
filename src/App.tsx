@@ -11,11 +11,12 @@ import NewReport from "./pages/NewReport";
 import EditReport from "./pages/EditReport";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
-import { mockAuth } from "./lib/mock-auth";
+import { authService } from "./services/auth.service";
 
 const queryClient = new QueryClient();
  
-mockAuth.makeAdmin('kusasirakwe.ethan.upti@gmail.com'); 
+// Development only: Make specific user an admin
+authService.makeAdmin('kusasirakwe.ethan.upti@gmail.com');
 
 const App = () => (
 

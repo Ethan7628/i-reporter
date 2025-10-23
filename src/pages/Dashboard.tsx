@@ -1,63 +1,25 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { mockAuth } from "@/lib/mock-auth";
-import { mockReports, Report } from "@/lib/mock-reports";
+import { useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useReports } from "@/hooks/useReports";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Plus, LogOut, AlertTriangle, FileCheck, MapPin, Edit, Trash2 } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-
-const statusColors = {
-  draft: 'bg-muted',
-  'under-investigation': 'bg-warning',
-  rejected: 'bg-destructive',
-  resolved: 'bg-secondary',
-};
+import { STATUS_COLORS } from "@/utils/constants";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [user, setUser] = useState(mockAuth.getCurrentUser());
-  const [reports, setReports] = useState<Report[]>([]);
+  const { user, logout, requireAuth } = useAuth();
+  const { reports, deleteReport } = useReports(user?.id);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-    setReports(mockReports.getUserReports(user.id));
-  }, [user, navigate]);
+    requireAuth();
+  }, []);
 
-  const handleLogout = () => {
-    mockAuth.logout();
-    setUser(null);
-    navigate('/landing');
-    toast({
-      title: "Logged out",
-      description: "See you soon!",
-    });
-  };
-
-  const handleDelete = (id: string) => {
-    try {
-      mockReports.delete(id, user!.id);
-      setReports(mockReports.getUserReports(user!.id));
-      toast({
-        title: "Report deleted",
-        description: "Your report has been removed",
-      });
-    } catch (error: unknown) {
-      let message = "An error occurred";
-      if (error instanceof Error) {
-        message = error.message;
-      }
-      toast({
-        title: "Cannot delete",
-        description: message,
-        variant: "destructive",
-      });
+  const handleDelete = async (id: string) => {
+    if (user) {
+      await deleteReport(id, user.id);
     }
   };
 
@@ -75,7 +37,7 @@ const Dashboard = () => {
             <div className="header-actions">
               <span className="user-info">{user.firstName} {user.lastName}{user.role === 'admin' && <Badge className="ml-2" variant="secondary">Admin</Badge>}</span>
               {user.role === 'admin' && <Button variant="outline" asChild><Link to="/admin" className="adminBtn">Admin Panel</Link></Button>}
-              <Button variant="ghost" size="icon" onClick={handleLogout}><LogOut className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" onClick={logout}><LogOut className="h-5 w-5" /></Button>
             </div>
           </div>
         </div>
@@ -116,7 +78,7 @@ const Dashboard = () => {
                         ) : (
                           <FileCheck className="icon-secondary" />
                         )}
-                        <Badge className={statusColors[report.status]}>{report.status}</Badge>
+                        <Badge className={STATUS_COLORS[report.status]}>{report.status}</Badge>
                       </div>
                       <CardTitle>{report.title}</CardTitle>
                       <CardDescription className="report-desc">{report.description.substring(0, 150)}...</CardDescription>

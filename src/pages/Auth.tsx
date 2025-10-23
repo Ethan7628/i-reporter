@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockAuth, loginSchema, signupSchema } from "@/lib/mock-auth";
+import { authService } from "@/services/auth.service";
+import { loginSchema, signupSchema } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { Shield } from "lucide-react";
 import { ZodError } from "zod";
@@ -24,17 +25,17 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    const user = mockAuth.getCurrentUser();
+    const user = authService.getCurrentUserSync();
     if (user) navigate('/dashboard');
   }, [navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
       if (mode === 'login') {
         const validated = loginSchema.parse(formData);
-        const result = mockAuth.login(validated);
+        const result = await authService.login(validated);
 
         if ('error' in result) {
           toast({ title: 'Login failed', description: result.error, variant: 'destructive' });
@@ -44,7 +45,7 @@ const Auth = () => {
         }
       } else {
         const validated = signupSchema.parse(formData);
-        const result = mockAuth.signup(validated);
+        const result = await authService.signup(validated);
 
         if ('error' in result) {
           toast({ title: 'Signup failed', description: result.error, variant: 'destructive' });
