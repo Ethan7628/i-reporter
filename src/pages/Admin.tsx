@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useReports } from "@/hooks/useReports";
+import { useToast } from "@/hooks/use-toast";
 import { ReportStatus } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,18 +13,41 @@ import { STATUS_COLORS } from "@/utils/constants";
 
 const Admin = () => {
   const navigate = useNavigate();
-  const { user, logout, requireAdmin } = useAuth();
+  const { user, logout, isAdmin, isAuthenticated, loading: authLoading } = useAuth();
   const { reports, updateStatus } = useReports(undefined, true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    requireAdmin();
-  }, []);
+    if (!authLoading && !isAuthenticated) {
+      navigate('/auth');
+      return;
+    }
+
+    if (!authLoading && user && !isAdmin) {
+      toast({
+        title: 'Access denied',
+        description: 'You need admin privileges',
+        variant: 'destructive',
+      });
+      navigate('/dashboard');
+    }
+  }, [user, isAdmin, navigate, isAuthenticated, authLoading, toast]);
 
   const handleStatusChange = async (reportId: string, newStatus: ReportStatus) => {
     await updateStatus(reportId, newStatus);
   };
 
-  if (!user || user.role !== 'admin') return null;
+  if (authLoading) {
+    return (
+      <div className="admin-root">
+        <div className="container" style={{ textAlign: 'center', paddingTop: '4rem' }}>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !isAdmin || !user) return null;
 
   return (
     <div className="admin-root">

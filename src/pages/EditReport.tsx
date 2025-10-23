@@ -12,7 +12,7 @@ const EditReport = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, requireAuth } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { getReport, updateReport: updateReportService } = useReports();
   const [formData, setFormData] = useState({
     title: '',
@@ -25,25 +25,41 @@ const EditReport = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!requireAuth() || !id) {
-      navigate('/dashboard');
+    if (!authLoading && !isAuthenticated) {
+      navigate('/auth');
       return;
     }
+
+    if (!user || authLoading || !id) return;
 
     const loadReport = async () => {
       const fetchedReport = await getReport(id);
       
       if (!fetchedReport) {
+        toast({
+          title: 'Report not found',
+          variant: 'destructive',
+        });
         navigate('/dashboard');
         return;
       }
 
-      if (fetchedReport.userId !== user!.id) {
+      if (fetchedReport.userId !== user.id) {
+        toast({
+          title: 'Access denied',
+          description: 'You can only edit your own reports',
+          variant: 'destructive',
+        });
         navigate('/dashboard');
         return;
       }
 
       if (['under-investigation', 'rejected', 'resolved'].includes(fetchedReport.status)) {
+        toast({
+          title: 'Cannot edit',
+          description: 'Only reports with status "Pending" can be edited',
+          variant: 'destructive',
+        });
         navigate('/dashboard');
         return;
       }
@@ -58,7 +74,7 @@ const EditReport = () => {
     };
 
     loadReport();
-  }, [id]);
+  }, [user, id, isAuthenticated, authLoading, navigate, toast, getReport]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -133,7 +149,17 @@ const EditReport = () => {
     }
   };
 
-  if (!user) return null;
+  if (authLoading) {
+    return (
+      <div className="page-root">
+        <div className="container" style={{ textAlign: 'center', paddingTop: '4rem' }}>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user || !report) return null;
 
   return (
     <div className="page-root">
