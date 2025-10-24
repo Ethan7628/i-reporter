@@ -1,10 +1,10 @@
 /**
  * Authentication Hook
  * 
- * Provides authentication state and methods to components
+ * Provides authentication state and methods to components with comprehensive error handling
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '@/services/auth.service';
 import { User, LoginCredentials, SignupCredentials } from '@/types';
@@ -13,21 +13,44 @@ import { useToast } from '@/hooks/use-toast';
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Load user on mount
-    const currentUser = authService.getCurrentUserSync();
-    setUser(currentUser);
-    setLoading(false);
+    // Load user on mount with error handling
+    const loadUser = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const currentUser = authService.getCurrentUserSync();
+        setUser(currentUser);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load user';
+        setError(message);
+        console.error('Error loading user:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUser();
   }, []);
 
-  const login = async (credentials: LoginCredentials) => {
+  const login = useCallback(async (credentials: LoginCredentials): Promise<boolean> => {
     try {
+      setLoading(true);
+      setError(null);
+
+      // Validate credentials exist
+      if (!credentials.email || !credentials.password) {
+        throw new Error('Email and password are required');
+      }
+
       const result = await authService.login(credentials);
       
       if ('error' in result) {
+        setError(result.error);
         toast({
           title: 'Login failed',
           description: result.error,
@@ -42,22 +65,34 @@ export const useAuth = () => {
         description: `Logged in as ${result.user.email}`,
       });
       return true;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Login failed';
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Login failed';
+      setError(message);
       toast({
         title: 'Error',
         description: message,
         variant: 'destructive',
       });
       return false;
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const signup = async (credentials: SignupCredentials) => {
+  const signup = useCallback(async (credentials: SignupCredentials): Promise<boolean> => {
     try {
+      setLoading(true);
+      setError(null);
+
+      // Validate credentials exist
+      if (!credentials.email || !credentials.password || !credentials.firstName || !credentials.lastName) {
+        throw new Error('All fields are required');
+      }
+
       const result = await authService.signup(credentials);
       
       if ('error' in result) {
+        setError(result.error);
         toast({
           title: 'Signup failed',
           description: result.error,
@@ -72,36 +107,57 @@ export const useAuth = () => {
         description: 'Welcome to iReporter',
       });
       return true;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Signup failed';
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Signup failed';
+      setError(message);
       toast({
         title: 'Error',
         description: message,
         variant: 'destructive',
       });
       return false;
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const logout = async () => {
-    await authService.logout();
-    setUser(null);
-    navigate('/landing');
-    toast({
-      title: 'Logged out',
-      description: 'See you soon!',
-    });
-  };
+  const logout = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      await authService.logout();
+      setUser(null);
+      navigate('/landing');
+      toast({
+        title: 'Logged out',
+        description: 'See you soon!',
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Logout failed';
+      setError(message);
+      console.error('Logout error:', err);
+      // Still clear user state even if logout fails
+      setUser(null);
+      navigate('/landing');
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate, toast]);
 
-  const requireAuth = (redirectTo = '/auth') => {
+  const requireAuth = useCallback((redirectTo = '/auth'): boolean => {
     if (!user) {
+      toast({
+        title: 'Authentication required',
+        description: 'Please log in to continue',
+        variant: 'destructive',
+      });
       navigate(redirectTo);
       return false;
     }
     return true;
-  };
+  }, [user, navigate, toast]);
 
-  const requireAdmin = () => {
+  const requireAdmin = useCallback((): boolean => {
     if (!user || user.role !== 'admin') {
       toast({
         title: 'Access denied',
@@ -112,11 +168,12 @@ export const useAuth = () => {
       return false;
     }
     return true;
-  };
+  }, [user, navigate, toast]);
 
   return {
     user,
     loading,
+    error,
     login,
     signup,
     logout,

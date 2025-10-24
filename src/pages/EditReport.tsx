@@ -7,13 +7,15 @@ import { reportSchema, Report } from "@/types";
 import { FILE_CONSTRAINTS, VALIDATION_MESSAGES } from "@/utils/constants";
 import { Shield, ArrowLeft, MapPin, Upload, X } from "lucide-react";
 import { LocationPicker } from "@/components/LocationPicker";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { ErrorMessage } from "@/components/ErrorMessage";
 
 const EditReport = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, requireAuth } = useAuth();
-  const { getReport, updateReport: updateReportService } = useReports();
+  const { user, requireAuth, loading: authLoading } = useAuth();
+  const { getReport, updateReport: updateReportService, loading: reportLoading } = useReports();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -22,43 +24,71 @@ const EditReport = () => {
   const [images, setImages] = useState<string[]>([]);
   const [showMap, setShowMap] = useState(false);
   const [report, setReport] = useState<Report | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (authLoading) return;
+    
     if (!requireAuth() || !id) {
       navigate('/dashboard');
       return;
     }
 
     const loadReport = async () => {
-      const fetchedReport = await getReport(id);
-      
-      if (!fetchedReport) {
-        navigate('/dashboard');
-        return;
-      }
+      try {
+        setLoading(true);
+        setError(null);
+        const fetchedReport = await getReport(id);
+        
+        if (!fetchedReport) {
+          toast({
+            title: "Report not found",
+            variant: "destructive",
+          });
+          navigate('/dashboard');
+          return;
+        }
 
-      if (fetchedReport.userId !== user!.id) {
-        navigate('/dashboard');
-        return;
-      }
+        if (fetchedReport.userId !== user!.id) {
+          toast({
+            title: "Access denied",
+            description: "You can only edit your own reports",
+            variant: "destructive",
+          });
+          navigate('/dashboard');
+          return;
+        }
 
-      if (['under-investigation', 'rejected', 'resolved'].includes(fetchedReport.status)) {
-        navigate('/dashboard');
-        return;
-      }
+        if (['under-investigation', 'rejected', 'resolved'].includes(fetchedReport.status)) {
+          toast({
+            title: "Cannot edit",
+            description: "This report cannot be edited",
+            variant: "destructive",
+          });
+          navigate('/dashboard');
+          return;
+        }
 
-      setReport(fetchedReport);
-      setFormData({
-        title: fetchedReport.title,
-        description: fetchedReport.description,
-        location: fetchedReport.location,
-      });
-      setImages(fetchedReport.images || []);
+        setReport(fetchedReport);
+        setFormData({
+          title: fetchedReport.title,
+          description: fetchedReport.description,
+          location: fetchedReport.location,
+        });
+        setImages(fetchedReport.images || []);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load report';
+        setError(message);
+        console.error('Load report error:', err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadReport();
-  }, [id]);
+  }, [id, authLoading]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -259,8 +289,8 @@ const EditReport = () => {
 
             {/* Form Actions */}
             <div className="form-actions">
-              <button type="submit" className="btn btn-primary">
-                Save Changes
+              <button type="submit" className="btn btn-primary" disabled={reportLoading}>
+                {reportLoading ? 'Saving...' : 'Save Changes'}
               </button>
               <Link to="/dashboard" className="btn btn-outline">
                 Cancel

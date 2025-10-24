@@ -11,20 +11,22 @@ import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { STATUS_COLORS } from "@/utils/constants";
 import { ReportStatus } from "@/types";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { ErrorMessage } from "@/components/ErrorMessage";
 
 const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, logout, isAuthenticated, isAdmin } = useAuth();
-  const { reports, getAllReports, updateReportStatus } = useReports();
+  const { user, logout, isAuthenticated, isAdmin, loading: authLoading } = useAuth();
+  const { reports, getAllReports, updateReportStatus, loading: reportsLoading, error } = useReports();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       navigate('/auth');
       return;
     }
     
-    if (!isAdmin) {
+    if (!authLoading && !isAdmin) {
       toast({
         title: "Access denied",
         description: "You need admin privileges to access this page",
@@ -34,21 +36,31 @@ const Admin = () => {
       return;
     }
 
-    getAllReports();
-  }, [isAuthenticated, isAdmin, navigate, toast, getAllReports]);
+    if (isAdmin) {
+      getAllReports();
+    }
+  }, [isAuthenticated, isAdmin, navigate, toast, getAllReports, authLoading]);
 
   const handleStatusChange = async (reportId: string, newStatus: ReportStatus) => {
-    await updateReportStatus(reportId, newStatus);
-    await getAllReports();
-    toast({
-      title: "Status updated",
-      description: `Report status changed to ${newStatus}`,
-    });
+    try {
+      await updateReportStatus(reportId, newStatus);
+      await getAllReports();
+    } catch (err) {
+      console.error('Status update error:', err);
+    }
   };
 
   const handleLogout = async () => {
-    await logout();
+    try {
+      await logout();
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
   };
+
+  if (authLoading) {
+    return <LoadingSpinner fullScreen text="Loading admin panel..." />;
+  }
 
   if (!isAuthenticated || !isAdmin) return null;
 
@@ -83,7 +95,19 @@ const Admin = () => {
           <p className="page-subtext">Manage and update the status of all citizen reports</p>
         </div>
 
-        {reports.length === 0 ? (
+        {error && (
+          <ErrorMessage
+            title="Error loading reports"
+            message={error}
+            onRetry={() => getAllReports()}
+          />
+        )}
+
+        {reportsLoading ? (
+          <div className="flex justify-center py-12">
+            <LoadingSpinner size="lg" text="Loading reports..." />
+          </div>
+        ) : reports.length === 0 ? (
           <Card>
             <CardContent className="empty-state">
               <Shield className="empty-icon" />

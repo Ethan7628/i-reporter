@@ -1,30 +1,35 @@
 /**
  * Reports Hook
  * 
- * Provides report management functionality to components
+ * Provides report management functionality with comprehensive error handling
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { reportService } from '@/services/report.service';
 import { Report, ReportStatus, CreateReportData, UpdateReportData } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
-export const useReports = (userId?: string, fetchAll = false) => {
+export const useReports = () => {
   const [reports, setReports] = useState<Report[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchReports = async () => {
-    setLoading(true);
+  const handleError = useCallback((err: unknown, defaultMessage: string) => {
+    const message = err instanceof Error ? err.message : defaultMessage;
+    setError(message);
+    console.error(defaultMessage, err);
+    return message;
+  }, []);
+
+  const getAllReports = useCallback(async () => {
     try {
-      const data = fetchAll 
-        ? await reportService.getAll()
-        : userId 
-          ? await reportService.getUserReports(userId)
-          : [];
+      setLoading(true);
+      setError(null);
+      const data = await reportService.getAll();
       setReports(data);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch reports';
+    } catch (err) {
+      const message = handleError(err, 'Failed to fetch reports');
       toast({
         title: 'Error',
         description: message,
@@ -33,35 +38,78 @@ export const useReports = (userId?: string, fetchAll = false) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast, handleError]);
 
-  useEffect(() => {
-    if (userId || fetchAll) {
-      fetchReports();
-    } else {
+  const getUserReports = useCallback(async (userId: string) => {
+    if (!userId) {
+      setError('User ID is required');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await reportService.getUserReports(userId);
+      setReports(data);
+    } catch (err) {
+      const message = handleError(err, 'Failed to fetch user reports');
+      toast({
+        title: 'Error',
+        description: message,
+        variant: 'destructive',
+      });
+    } finally {
       setLoading(false);
     }
-  }, [userId, fetchAll]);
+  }, [toast, handleError]);
 
-  const createReport = async (data: CreateReportData) => {
+  const createReport = useCallback(async (data: CreateReportData): Promise<Report | null> => {
     try {
+      setLoading(true);
+      setError(null);
+
+      // Validate required fields
+      if (!data.title || !data.description || !data.type) {
+        throw new Error('Title, description, and type are required');
+      }
+
       const newReport = await reportService.create(data);
       setReports((prev) => [newReport, ...prev]);
+      
+      toast({
+        title: 'Report created!',
+        description: 'Your report has been submitted successfully.',
+      });
+      
       return newReport;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create report';
+    } catch (err) {
+      const message = handleError(err, 'Failed to create report');
       toast({
         title: 'Error',
         description: message,
         variant: 'destructive',
       });
       return null;
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [toast, handleError]);
 
-  const updateReport = async (id: string, data: UpdateReportData) => {
+  const updateReport = useCallback(async (id: string, data: UpdateReportData): Promise<Report | null> => {
+    if (!id) {
+      toast({
+        title: 'Error',
+        description: 'Report ID is required',
+        variant: 'destructive',
+      });
+      return null;
+    }
+
     try {
+      setLoading(true);
+      setError(null);
       const updated = await reportService.update(id, data);
+      
       if (updated) {
         setReports((prev) =>
           prev.map((r) => (r.id === id ? updated : r))
@@ -73,39 +121,67 @@ export const useReports = (userId?: string, fetchAll = false) => {
         return updated;
       }
       return null;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to update report';
+    } catch (err) {
+      const message = handleError(err, 'Failed to update report');
       toast({
         title: 'Error',
         description: message,
         variant: 'destructive',
       });
       return null;
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [toast, handleError]);
 
-  const deleteReport = async (id: string) => {
+  const deleteReport = useCallback(async (id: string): Promise<boolean> => {
+    if (!id) {
+      toast({
+        title: 'Error',
+        description: 'Report ID is required',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
     try {
+      setLoading(true);
+      setError(null);
       const success = await reportService.delete(id);
+      
       if (success) {
         setReports((prev) => prev.filter((r) => r.id !== id));
         return true;
       }
       return false;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to delete report';
+    } catch (err) {
+      const message = handleError(err, 'Failed to delete report');
       toast({
         title: 'Cannot delete',
         description: message,
         variant: 'destructive',
       });
       return false;
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [toast, handleError]);
 
-  const updateStatus = async (id: string, status: ReportStatus) => {
+  const updateStatus = useCallback(async (id: string, status: ReportStatus): Promise<Report | null> => {
+    if (!id || !status) {
+      toast({
+        title: 'Error',
+        description: 'Report ID and status are required',
+        variant: 'destructive',
+      });
+      return null;
+    }
+
     try {
+      setLoading(true);
+      setError(null);
       const updated = await reportService.updateStatus(id, status);
+      
       if (updated) {
         setReports((prev) =>
           prev.map((r) => (r.id === id ? updated : r))
@@ -117,72 +193,50 @@ export const useReports = (userId?: string, fetchAll = false) => {
         return updated;
       }
       return null;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to update status';
+    } catch (err) {
+      const message = handleError(err, 'Failed to update status');
       toast({
         title: 'Error',
         description: message,
         variant: 'destructive',
       });
       return null;
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [toast, handleError]);
 
-  const getReport = async (id: string) => {
+  const getReport = useCallback(async (id: string): Promise<Report | null> => {
+    if (!id) {
+      setError('Report ID is required');
+      return null;
+    }
+
     try {
+      setLoading(true);
+      setError(null);
       return await reportService.getById(id);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch report';
+    } catch (err) {
+      const message = handleError(err, 'Failed to fetch report');
       toast({
         title: 'Error',
         description: message,
         variant: 'destructive',
       });
       return null;
-    }
-  };
-
-  const getAllReports = async () => {
-    setLoading(true);
-    try {
-      const data = await reportService.getAll();
-      setReports(data);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch reports';
-      toast({
-        title: 'Error',
-        description: message,
-        variant: 'destructive',
-      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast, handleError]);
 
-  const getUserReports = async (userId: string) => {
-    setLoading(true);
-    try {
-      const data = await reportService.getUserReports(userId);
-      setReports(data);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch reports';
-      toast({
-        title: 'Error',
-        description: message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateReportStatus = async (id: string, status: ReportStatus) => {
+  const updateReportStatus = useCallback(async (id: string, status: ReportStatus): Promise<Report | null> => {
     return await updateStatus(id, status);
-  };
+  }, [updateStatus]);
 
   return {
     reports,
     loading,
+    error,
     createReport,
     updateReport,
     deleteReport,
@@ -191,6 +245,5 @@ export const useReports = (userId?: string, fetchAll = false) => {
     getReport,
     getAllReports,
     getUserReports,
-    refetch: fetchReports,
   };
 };
