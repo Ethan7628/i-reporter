@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockAuth, loginSchema, signupSchema } from "@/lib/mock-auth";
+import { useAuth } from "@/hooks/useAuth";
+import { loginSchema, signupSchema } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { Shield } from "lucide-react";
 import { ZodError } from "zod";
@@ -13,6 +14,7 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login, signup, isAuthenticated } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup'>(
     searchParams.get('mode') === 'signup' ? 'signup' : 'login'
   );
@@ -24,32 +26,25 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    const user = mockAuth.getCurrentUser();
-    if (user) navigate('/dashboard');
-  }, [navigate]);
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
       if (mode === 'login') {
         const validated = loginSchema.parse(formData);
-        const result = mockAuth.login(validated);
-
-        if ('error' in result) {
-          toast({ title: 'Login failed', description: result.error, variant: 'destructive' });
-        } else {
-          toast({ title: 'Welcome back!', description: `Logged in as ${result.user.email}` });
+        const success = await login(validated);
+        if (success) {
           navigate('/dashboard');
         }
       } else {
         const validated = signupSchema.parse(formData);
-        const result = mockAuth.signup(validated);
-
-        if ('error' in result) {
-          toast({ title: 'Signup failed', description: result.error, variant: 'destructive' });
-        } else {
-          toast({ title: 'Account created!', description: 'Welcome to iReporter' });
+        const success = await signup(validated);
+        if (success) {
           navigate('/dashboard');
         }
       }

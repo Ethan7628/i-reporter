@@ -59,11 +59,15 @@ export const reportSchema = z.object({
   type: z.enum(['red-flag', 'intervention']),
 });
 
-export type CreateReportData = z.infer<typeof reportSchema>;
-
-export interface UpdateReportData extends Partial<CreateReportData> {
+export interface CreateReportData {
+  title: string;
+  description: string;
+  type: ReportType;
   location?: ReportLocation | null;
   images?: string[];
+}
+
+export interface UpdateReportData extends Partial<CreateReportData> {
   status?: ReportStatus;
 }
 
