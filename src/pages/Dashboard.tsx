@@ -1,34 +1,11 @@
-<<<<<<< HEAD
-import { useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { useReports } from "@/hooks/useReports";
-=======
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { mockAuth } from "@/lib/mock-auth";
 import { mockReports, Report } from "@/lib/mock-reports";
->>>>>>> ivan
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Plus, LogOut, AlertTriangle, FileCheck, MapPin, Edit, Trash2 } from "lucide-react";
-<<<<<<< HEAD
-import { STATUS_COLORS } from "@/utils/constants";
-
-const Dashboard = () => {
-  const navigate = useNavigate();
-  const { user, logout, requireAuth } = useAuth();
-  const { reports, deleteReport } = useReports(user?.id);
-
-  useEffect(() => {
-    requireAuth();
-  }, []);
-
-  const handleDelete = async (id: string) => {
-    if (user) {
-      await deleteReport(id, user.id);
-=======
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -99,9 +76,6 @@ const Dashboard = () => {
             <div className="header-actions">
               <span className="user-info">{user.firstName} {user.lastName}{user.role === 'admin' && <Badge className="ml-2" variant="secondary">Admin</Badge>}</span>
               {user.role === 'admin' && <Button variant="outline" asChild><Link to="/admin" className="adminBtn">Admin Panel</Link></Button>}
-<<<<<<< HEAD
-              <Button variant="ghost" size="icon" onClick={logout}><LogOut className="h-5 w-5" /></Button>
-=======
               <Button variant="ghost" size="icon" onClick={handleLogout}><LogOut className="h-5 w-5" /></Button>
 >>>>>>> ivan
             </div>
