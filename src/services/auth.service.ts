@@ -24,55 +24,76 @@ class AuthService {
    * Sign up a new user
    */
   async signup(credentials: SignupCredentials): Promise<{ user: User } | { error: string }> {
-    // Validate input
-    const validated = signupSchema.parse(credentials);
+    try {
+      // Validate input
+      const validated = signupSchema.parse(credentials);
 
-    // TODO: Replace with real API call when ready
-    // const response = await apiService.post<AuthResponse>(
-    //   API_ENDPOINTS.AUTH.SIGNUP,
-    //   validated
-    // );
-    // if (!response.success || !response.data) {
-    //   return { error: response.error || 'Signup failed' };
-    // }
-    // this.setAuthToken(response.data.token);
-    // return { user: response.data.user };
+      // TODO: Replace with real API call when ready
+      // const response = await apiService.post<AuthResponse>(
+      //   API_ENDPOINTS.AUTH.SIGNUP,
+      //   validated
+      // );
+      // if (!response.success || !response.data) {
+      //   return { error: response.error || 'Signup failed' };
+      // }
+      // this.setAuthToken(response.data.token);
+      // return { user: response.data.user };
 
-    // Mock implementation
-    return this.mockSignup(validated);
+      // Mock implementation
+      return this.mockSignup(validated);
+    } catch (error) {
+      if (error instanceof Error) {
+        return { error: error.message };
+      }
+      return { error: 'Signup failed. Please try again.' };
+    }
   }
 
   /**
    * Log in a user
    */
   async login(credentials: LoginCredentials): Promise<{ user: User } | { error: string }> {
-    // Validate input
-    const validated = loginSchema.parse(credentials);
+    try {
+      // Validate input
+      const validated = loginSchema.parse(credentials);
 
-    // TODO: Replace with real API call when ready
-    // const response = await apiService.post<AuthResponse>(
-    //   API_ENDPOINTS.AUTH.LOGIN,
-    //   validated
-    // );
-    // if (!response.success || !response.data) {
-    //   return { error: response.error || 'Login failed' };
-    // }
-    // this.setAuthToken(response.data.token);
-    // return { user: response.data.user };
+      // TODO: Replace with real API call when ready
+      // const response = await apiService.post<AuthResponse>(
+      //   API_ENDPOINTS.AUTH.LOGIN,
+      //   validated
+      // );
+      // if (!response.success || !response.data) {
+      //   return { error: response.error || 'Login failed' };
+      // }
+      // this.setAuthToken(response.data.token);
+      // return { user: response.data.user };
 
-    // Mock implementation
-    return this.mockLogin(validated);
+      // Mock implementation
+      return this.mockLogin(validated);
+    } catch (error) {
+      if (error instanceof Error) {
+        return { error: error.message };
+      }
+      return { error: 'Login failed. Please try again.' };
+    }
   }
 
   /**
    * Log out current user
    */
   async logout(): Promise<void> {
-    // TODO: Replace with real API call when ready
-    // await apiService.post(API_ENDPOINTS.AUTH.LOGOUT);
-    
-    this.clearAuthToken();
-    localStorage.removeItem(CURRENT_USER_KEY);
+    try {
+      // TODO: Replace with real API call when ready
+      // await apiService.post(API_ENDPOINTS.AUTH.LOGOUT);
+      
+      this.clearAuthToken();
+      localStorage.removeItem(CURRENT_USER_KEY);
+    } catch (error) {
+      // Still clear local data even if API call fails
+      console.error('Logout error:', error);
+      this.clearAuthToken();
+      localStorage.removeItem(CURRENT_USER_KEY);
+    }
   }
 
   /**

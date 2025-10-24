@@ -7,12 +7,13 @@ import { Shield, AlertTriangle, FileCheck, ArrowLeft, MapPin, Upload, X } from "
 import { LocationPicker } from "@/components/LocationPicker";
 import { reportSchema } from "@/types";
 import { FILE_CONSTRAINTS, VALIDATION_MESSAGES } from "@/utils/constants";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 const NewReport = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, isAuthenticated } = useAuth();
-  const { createReport } = useReports();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { createReport, loading: submitting } = useReports();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -24,10 +25,10 @@ const NewReport = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       navigate('/auth');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, authLoading]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -72,7 +73,15 @@ const NewReport = () => {
       return;
     }
 
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to create a report",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
 
     try {
       const validated = reportSchema.parse({
@@ -81,20 +90,17 @@ const NewReport = () => {
         type: formData.type,
       });
 
-      await createReport({
+      const report = await createReport({
         title: validated.title,
         description: validated.description,
         type: validated.type,
         location: formData.location,
         images,
       });
-      
-      toast({
-        title: "Report created!",
-        description: "Your report has been submitted successfully.",
-      });
-      
-      navigate('/dashboard');
+
+      if (report) {
+        navigate('/dashboard');
+      }
     } catch (error: unknown) {
       let message = "Please check your input";
       if (error instanceof Error) {
@@ -107,6 +113,10 @@ const NewReport = () => {
       });
     }
   };
+
+  if (authLoading) {
+    return <LoadingSpinner fullScreen text="Loading..." />;
+  }
 
   if (!user) return null;
 
@@ -278,8 +288,8 @@ const NewReport = () => {
 
             {/* Form Actions */}
             <div className="form-actions">
-              <button type="submit" className="btn btn-primary">
-                Create Report
+              <button type="submit" className="btn btn-primary" disabled={submitting}>
+                {submitting ? 'Creating...' : 'Create Report'}
               </button>
               <Link to="/dashboard" className="btn btn-outline">
                 Cancel

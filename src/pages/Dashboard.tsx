@@ -9,49 +9,55 @@ import { Shield, Plus, LogOut, AlertTriangle, FileCheck, MapPin, Edit, Trash2 } 
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { STATUS_COLORS } from "@/utils/constants";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { ErrorMessage } from "@/components/ErrorMessage";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, logout, isAuthenticated } = useAuth();
-  const { reports, getUserReports, deleteReport } = useReports();
+  const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
+  const { reports, getUserReports, deleteReport, loading: reportsLoading, error } = useReports();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       navigate('/auth');
       return;
     }
     if (user) {
       getUserReports(user.id);
     }
-  }, [isAuthenticated, user, navigate, getUserReports]);
+  }, [isAuthenticated, user, navigate, getUserReports, authLoading]);
 
   const handleLogout = async () => {
-    await logout();
+    try {
+      await logout();
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
   };
 
   const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+      return;
+    }
+
     try {
-      await deleteReport(id);
-      if (user) {
+      const success = await deleteReport(id);
+      if (success && user) {
         await getUserReports(user.id);
+        toast({
+          title: "Report deleted",
+          description: "Your report has been removed",
+        });
       }
-      toast({
-        title: "Report deleted",
-        description: "Your report has been removed",
-      });
-    } catch (error: unknown) {
-      let message = "An error occurred";
-      if (error instanceof Error) {
-        message = error.message;
-      }
-      toast({
-        title: "Cannot delete",
-        description: message,
-        variant: "destructive",
-      });
+    } catch (err) {
+      console.error('Delete error:', err);
     }
   };
+
+  if (authLoading) {
+    return <LoadingSpinner fullScreen text="Loading your dashboard..." />;
+  }
 
   if (!user) return null;
 
@@ -86,7 +92,19 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {reports.length === 0 ? (
+        {error && (
+          <ErrorMessage
+            title="Error loading reports"
+            message={error}
+            onRetry={() => user && getUserReports(user.id)}
+          />
+        )}
+
+        {reportsLoading ? (
+          <div className="flex justify-center py-12">
+            <LoadingSpinner size="lg" text="Loading reports..." />
+          </div>
+        ) : reports.length === 0 ? (
           <Card>
             <CardContent className="empty-state">
               <Shield className="empty-icon" />
