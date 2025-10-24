@@ -1,49 +1,41 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { mockAuth } from "@/lib/mock-auth";
-import { mockReports, Report } from "@/lib/mock-reports";
+import { useAuth } from "@/hooks/useAuth";
+import { useReports } from "@/hooks/useReports";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Plus, LogOut, AlertTriangle, FileCheck, MapPin, Edit, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-
-const statusColors = {
-  draft: 'bg-muted',
-  'under-investigation': 'bg-warning',
-  rejected: 'bg-destructive',
-  resolved: 'bg-secondary',
-};
+import { STATUS_COLORS } from "@/utils/constants";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [user, setUser] = useState(mockAuth.getCurrentUser());
-  const [reports, setReports] = useState<Report[]>([]);
+  const { user, logout, isAuthenticated } = useAuth();
+  const { reports, getUserReports, deleteReport } = useReports();
 
   useEffect(() => {
-    if (!user) {
+    if (!isAuthenticated) {
       navigate('/auth');
       return;
     }
-    setReports(mockReports.getUserReports(user.id));
-  }, [user, navigate]);
+    if (user) {
+      getUserReports(user.id);
+    }
+  }, [isAuthenticated, user, navigate, getUserReports]);
 
-  const handleLogout = () => {
-    mockAuth.logout();
-    setUser(null);
-    navigate('/landing');
-    toast({
-      title: "Logged out",
-      description: "See you soon!",
-    });
+  const handleLogout = async () => {
+    await logout();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     try {
-      mockReports.delete(id, user!.id);
-      setReports(mockReports.getUserReports(user!.id));
+      await deleteReport(id);
+      if (user) {
+        await getUserReports(user.id);
+      }
       toast({
         title: "Report deleted",
         description: "Your report has been removed",
@@ -58,7 +50,6 @@ const Dashboard = () => {
         description: message,
         variant: "destructive",
       });
->>>>>>> ivan
     }
   };
 
@@ -77,7 +68,6 @@ const Dashboard = () => {
               <span className="user-info">{user.firstName} {user.lastName}{user.role === 'admin' && <Badge className="ml-2" variant="secondary">Admin</Badge>}</span>
               {user.role === 'admin' && <Button variant="outline" asChild><Link to="/admin" className="adminBtn">Admin Panel</Link></Button>}
               <Button variant="ghost" size="icon" onClick={handleLogout}><LogOut className="h-5 w-5" /></Button>
->>>>>>> ivan
             </div>
           </div>
         </div>
@@ -118,11 +108,7 @@ const Dashboard = () => {
                         ) : (
                           <FileCheck className="icon-secondary" />
                         )}
-<<<<<<< HEAD
                         <Badge className={STATUS_COLORS[report.status]}>{report.status}</Badge>
-=======
-                        <Badge className={statusColors[report.status]}>{report.status}</Badge>
->>>>>>> ivan
                       </div>
                       <CardTitle>{report.title}</CardTitle>
                       <CardDescription className="report-desc">{report.description.substring(0, 150)}...</CardDescription>

@@ -43,14 +43,10 @@ export const useReports = (userId?: string, fetchAll = false) => {
     }
   }, [userId, fetchAll]);
 
-  const createReport = async (data: CreateReportData, userId: string) => {
+  const createReport = async (data: CreateReportData) => {
     try {
-      const newReport = await reportService.create(data, userId);
+      const newReport = await reportService.create(data);
       setReports((prev) => [newReport, ...prev]);
-      toast({
-        title: 'Report created!',
-        description: 'Your report has been submitted successfully.',
-      });
       return newReport;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create report';
@@ -88,15 +84,11 @@ export const useReports = (userId?: string, fetchAll = false) => {
     }
   };
 
-  const deleteReport = async (id: string, userId: string) => {
+  const deleteReport = async (id: string) => {
     try {
-      const success = await reportService.delete(id, userId);
+      const success = await reportService.delete(id);
       if (success) {
         setReports((prev) => prev.filter((r) => r.id !== id));
-        toast({
-          title: 'Report deleted',
-          description: 'Your report has been removed',
-        });
         return true;
       }
       return false;
@@ -150,6 +142,44 @@ export const useReports = (userId?: string, fetchAll = false) => {
     }
   };
 
+  const getAllReports = async () => {
+    setLoading(true);
+    try {
+      const data = await reportService.getAll();
+      setReports(data);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch reports';
+      toast({
+        title: 'Error',
+        description: message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getUserReports = async (userId: string) => {
+    setLoading(true);
+    try {
+      const data = await reportService.getUserReports(userId);
+      setReports(data);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch reports';
+      toast({
+        title: 'Error',
+        description: message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateReportStatus = async (id: string, status: ReportStatus) => {
+    return await updateStatus(id, status);
+  };
+
   return {
     reports,
     loading,
@@ -157,7 +187,10 @@ export const useReports = (userId?: string, fetchAll = false) => {
     updateReport,
     deleteReport,
     updateStatus,
+    updateReportStatus,
     getReport,
+    getAllReports,
+    getUserReports,
     refetch: fetchReports,
   };
 };

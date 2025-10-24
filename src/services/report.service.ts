@@ -20,22 +20,34 @@ class ReportService {
   /**
    * Create a new report
    */
-  async create(data: CreateReportData, userId: string): Promise<Report> {
-    // Validate input
-    const validated = reportSchema.parse(data);
+  async create(data: CreateReportData): Promise<Report> {
+    // Validate basic fields
+    const validated = reportSchema.parse({
+      title: data.title,
+      description: data.description,
+      type: data.type,
+    });
 
     // TODO: Replace with real API call when ready
     // const response = await apiService.post<Report>(
     //   API_ENDPOINTS.REPORTS.CREATE,
-    //   { ...validated, userId }
+    //   data
     // );
     // if (!response.success || !response.data) {
     //   throw new Error(response.error || 'Failed to create report');
     // }
     // return response.data;
 
-    // Mock implementation
-    return this.mockCreate(validated, userId);
+    // Mock implementation - will need userId from auth context in real implementation
+    const mockUserId = localStorage.getItem('ireporter_current_user');
+    const userId = mockUserId ? JSON.parse(mockUserId).id : 'unknown';
+    return this.mockCreate({
+      title: validated.title,
+      description: validated.description,
+      type: validated.type,
+      location: data.location,
+      images: data.images
+    }, userId);
   }
 
   /**
@@ -106,7 +118,7 @@ class ReportService {
   /**
    * Delete a report
    */
-  async delete(id: string, userId: string): Promise<boolean> {
+  async delete(id: string): Promise<boolean> {
     // TODO: Replace with real API call when ready
     // const response = await apiService.delete(API_ENDPOINTS.REPORTS.DELETE(id));
     // if (!response.success) {
@@ -114,7 +126,9 @@ class ReportService {
     // }
     // return true;
 
-    // Mock implementation
+    // Mock implementation - will need userId from auth context in real implementation
+    const mockUserId = localStorage.getItem('ireporter_current_user');
+    const userId = mockUserId ? JSON.parse(mockUserId).id : 'unknown';
     return this.mockDelete(id, userId);
   }
 

@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { mockAuth } from "@/lib/mock-auth";
-import { mockReports, Report, ReportStatus } from "@/lib/mock-reports";
+import { useAuth } from "@/hooks/useAuth";
+import { useReports } from "@/hooks/useReports";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,27 +9,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Shield, LogOut, AlertTriangle, FileCheck, MapPin, Image as ImageIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-
-const statusColors = {
-  draft: 'bg-muted',
-  'under-investigation': 'bg-warning',
-  rejected: 'bg-destructive',
-  resolved: 'bg-secondary',
-};
+import { STATUS_COLORS } from "@/utils/constants";
+import { ReportStatus } from "@/types";
 
 const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [user, setUser] = useState(mockAuth.getCurrentUser());
-  const [reports, setReports] = useState<Report[]>([]);
+  const { user, logout, isAuthenticated, isAdmin } = useAuth();
+  const { reports, getAllReports, updateReportStatus } = useReports();
 
   useEffect(() => {
-    if (!user) {
+    if (!isAuthenticated) {
       navigate('/auth');
       return;
     }
     
-    if (user.role !== 'admin') {
+    if (!isAdmin) {
       toast({
         title: "Access denied",
         description: "You need admin privileges to access this page",
@@ -39,25 +34,23 @@ const Admin = () => {
       return;
     }
 
-    setReports(mockReports.getAll());
-  }, [user, navigate, toast]);
+    getAllReports();
+  }, [isAuthenticated, isAdmin, navigate, toast, getAllReports]);
 
-  const handleStatusChange = (reportId: string, newStatus: ReportStatus) => {
-    mockReports.updateStatus(reportId, newStatus);
-    setReports(mockReports.getAll());
+  const handleStatusChange = async (reportId: string, newStatus: ReportStatus) => {
+    await updateReportStatus(reportId, newStatus);
+    await getAllReports();
     toast({
       title: "Status updated",
       description: `Report status changed to ${newStatus}`,
     });
   };
 
-  const handleLogout = () => {
-    mockAuth.logout();
-    setUser(null);
-    navigate('/landing');
+  const handleLogout = async () => {
+    await logout();
   };
 
-  if (!user || user.role !== 'admin') return null;
+  if (!isAuthenticated || !isAdmin) return null;
 
   return (
     <div className="admin-root">
@@ -112,7 +105,7 @@ const Admin = () => {
                           <FileCheck className="icon-secondary" />
                         )}
                         <Badge variant="outline" className="report-type">{report.type}</Badge>
-                        <Badge className={statusColors[report.status]}>{report.status}</Badge>
+                        <Badge className={STATUS_COLORS[report.status]}>{report.status}</Badge>
                       </div>
                       <CardTitle>{report.title}</CardTitle>
                       <CardDescription className="report-desc">{report.description.substring(0, 200)}...</CardDescription>
