@@ -1,18 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { useReports } from "@/hooks/useReports";
+import { mockAuth } from "@/lib/mock-auth";
+import { mockReports, reportSchema } from "@/lib/mock-reports";
 import { useToast } from "@/hooks/use-toast";
-import { reportSchema } from "@/types";
-import { FILE_CONSTRAINTS, VALIDATION_MESSAGES } from "@/utils/constants";
 import { Shield, AlertTriangle, FileCheck, ArrowLeft, MapPin, Upload, X } from "lucide-react";
 import { LocationPicker } from "@/components/LocationPicker";
 
 const NewReport = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, requireAuth } = useAuth();
-  const { createReport, updateReport } = useReports();
+  const [user, setUser] = useState(mockAuth.getCurrentUser());
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -24,18 +21,20 @@ const NewReport = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    requireAuth();
-  }, []);
+    if (!user) {
+      navigate('/auth');
+    }
+  }, [user, navigate]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
     Array.from(files).forEach((file) => {
-      if (file.size > FILE_CONSTRAINTS.MAX_IMAGE_SIZE) {
+      if (file.size > 5 * 1024 * 1024) {
         toast({
           title: "File too large",
-          description: VALIDATION_MESSAGES.IMAGE_TOO_LARGE,
+          description: "Images must be less than 5MB",
           variant: "destructive",
         });
         return;
@@ -58,15 +57,13 @@ const NewReport = () => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!user) return;
-
-    if (images.length > FILE_CONSTRAINTS.MAX_IMAGES) {
+    if (images.length > 4) {
       toast({
         title: "Too many images",
-        description: VALIDATION_MESSAGES.TOO_MANY_IMAGES,
+        description: "Maximum 4 images allowed",
         variant: "destructive",
       });
       return;
@@ -74,20 +71,31 @@ const NewReport = () => {
 
     try {
       const validated = reportSchema.parse(formData);
-      const report = await createReport(validated, user.id);
+      const report = mockReports.create(validated, user!.id);
       
-      if (report && (formData.location || images.length > 0)) {
-        await updateReport(report.id, {
+      if (formData.location || images.length > 0) {
+        mockReports.update(report.id, {
           location: formData.location,
           images,
         });
       }
       
+      toast({
+        title: "Report created!",
+        description: "Your report has been submitted successfully.",
+      });
+      
       navigate('/dashboard');
     } catch (error: unknown) {
       let message = "Please check your input";
-      if (error instanceof Error) {
-        message = error.message;
+      type ValidationError = { errors: { message?: string }[] };
+      if (
+        error &&
+        typeof error === "object" &&
+        "errors" in error &&
+        Array.isArray((error as ValidationError).errors)
+      ) {
+        message = (error as ValidationError).errors?.[0]?.message || message;
       }
       toast({
         title: "Validation error",

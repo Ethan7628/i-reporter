@@ -1,4 +1,8 @@
 import { z } from 'zod';
+<<<<<<< HEAD
+=======
+import api, { setToken } from './api';
+>>>>>>> ivan
 
 export const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -18,6 +22,7 @@ export interface User {
   role: 'user' | 'admin';
 }
 
+<<<<<<< HEAD
 const USERS_KEY = 'ireporter_users';
 const CURRENT_USER_KEY = 'ireporter_current_user';
 
@@ -77,6 +82,52 @@ export const mockAuth = {
       if (currentUser?.email === email) {
         localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(users[userIndex]));
       }
+=======
+export const mockAuth = {
+  signup: async (data: z.infer<typeof signupSchema>): Promise<{ user: User } | { error: string }> => {
+    try {
+      const res = await api.post<{ user: User; token?: string }>('/auth/signup', data);
+      if (res.token) setToken(res.token);
+      return { user: res.user };
+    } catch (err: any) {
+      return { error: err.message || 'Signup failed' };
+    }
+  },
+
+  login: async (data: z.infer<typeof loginSchema>): Promise<{ user: User } | { error: string }> => {
+    try {
+      const res = await api.post<{ user: User; token?: string }>('/auth/login', data);
+      if (res.token) setToken(res.token);
+      return { user: res.user };
+    } catch (err: any) {
+      return { error: err.message || 'Login failed' };
+    }
+  },
+
+  logout: async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (e) {
+      // ignore
+    }
+    setToken(null);
+  },
+
+  getCurrentUser: async (): Promise<User | null> => {
+    try {
+      const res = await api.get<{ user: User }>('/auth/me');
+      return res.user;
+    } catch {
+      return null;
+    }
+  },
+
+  makeAdmin: async (email: string) => {
+    try {
+      await api.post('/auth/make-admin', { email });
+    } catch (e) {
+      // ignore
+>>>>>>> ivan
     }
   },
 };
