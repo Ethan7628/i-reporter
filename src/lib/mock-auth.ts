@@ -24,6 +24,8 @@ export const mockAuth = {
     try {
       const res = await api.post<{ user: User; token?: string }>('/auth/signup', data);
       if (res.token) setToken(res.token);
+      // persist current user for sync callers
+      try { localStorage.setItem('ireporter_current_user', JSON.stringify(res.user)); } catch {}
       return { user: res.user };
     } catch (err: any) {
       return { error: err.message || 'Signup failed' };
@@ -34,6 +36,7 @@ export const mockAuth = {
     try {
       const res = await api.post<{ user: User; token?: string }>('/auth/login', data);
       if (res.token) setToken(res.token);
+      try { localStorage.setItem('ireporter_current_user', JSON.stringify(res.user)); } catch {}
       return { user: res.user };
     } catch (err: any) {
       return { error: err.message || 'Login failed' };
@@ -49,14 +52,32 @@ export const mockAuth = {
     setToken(null);
   },
 
-  getCurrentUser: async (): Promise<User | null> => {
-    try {
-      const res = await api.get<{ user: User }>('/auth/me');
-      return res.user;
-    } catch {
-      return null;
-    }
-  },
+  // Keep a sync getter for compatibility with components that expect immediate value
+  getCurrentUser: (() => {
+    const sync = (): User | null => {
+      try {
+        const u = localStorage.getItem('ireporter_current_user');
+        return u ? JSON.parse(u) : null;
+      } catch {
+        return null;
+      }
+    };
+
+    // async variant also available as mockAuth.getCurrentUserAsync
+    const asyncFn = async (): Promise<User | null> => {
+      try {
+        const res = await api.get<{ user: User }>('/auth/me');
+        try { localStorage.setItem('ireporter_current_user', JSON.stringify(res.user)); } catch {}
+        return res.user;
+      } catch {
+        return sync();
+      }
+    };
+
+    // Return the sync function but attach the async one for explicit usage
+    (sync as any).async = asyncFn;
+    return sync as unknown as (() => User | null) & { async: () => Promise<User | null> };
+  })(),
 
   makeAdmin: async (email: string) => {
     try {

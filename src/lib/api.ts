@@ -24,10 +24,18 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
 
   const text = await res.text();
-  const body = text ? JSON.parse(text) : null;
+  let body: any = null;
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      // not JSON (HTML or plain text)
+      body = text;
+    }
+  }
 
   if (!res.ok) {
-    const message = body?.error || body?.message || res.statusText || 'API error';
+    const message = typeof body === 'object' ? (body?.error || body?.message) : (String(body) || res.statusText || 'API error');
     throw new Error(message);
   }
 
