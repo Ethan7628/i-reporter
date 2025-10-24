@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { authService } from "@/services/auth.service";
-import { loginSchema, signupSchema } from "@/types";
+import { mockAuth, loginSchema, signupSchema } from "@/lib/mock-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Shield } from "lucide-react";
 import { ZodError } from "zod";
@@ -25,17 +24,17 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    const user = authService.getCurrentUserSync();
+    const user = mockAuth.getCurrentUser();
     if (user) navigate('/dashboard');
   }, [navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
       if (mode === 'login') {
         const validated = loginSchema.parse(formData);
-        const result = await authService.login(validated);
+        const result = mockAuth.login(validated);
 
         if ('error' in result) {
           toast({ title: 'Login failed', description: result.error, variant: 'destructive' });
@@ -45,7 +44,7 @@ const Auth = () => {
         }
       } else {
         const validated = signupSchema.parse(formData);
-        const result = await authService.signup(validated);
+        const result = mockAuth.signup(validated);
 
         if ('error' in result) {
           toast({ title: 'Signup failed', description: result.error, variant: 'destructive' });
@@ -81,23 +80,23 @@ const Auth = () => {
           <form onSubmit={handleSubmit} className="form-stack">
             {mode === 'signup' && (
               <>
-                <div>
-                  <Label htmlFor="firstName">First Name</Label>
+                <div className="form-field">
+                  <Label htmlFor="firstName"> Name</Label>
                   <Input id="firstName" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} required />
                 </div>
-                <div>
+                {/* <div className="form-field">
                   <Label htmlFor="lastName">Last Name</Label>
                   <Input id="lastName" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} required />
-                </div>
+                </div> */}
               </>
             )}
 
-            <div>
+            <div className="form-field">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
             </div>
 
-            <div>
+            <div className="form-field">
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required />
             </div>
