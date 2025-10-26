@@ -9,6 +9,7 @@ import { Shield, ArrowLeft, MapPin, Upload, X } from "lucide-react";
 import { LocationPicker } from "@/components/LocationPicker";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const EditReport = () => {
   const { id } = useParams();
@@ -163,10 +164,41 @@ const EditReport = () => {
     }
   };
 
-  if (!user) return null;
+  if (authLoading || loading) {
+    return <LoadingSpinner fullScreen text="Loading report..." />;
+  }
+
+  if (error) {
+    return (
+      <div className="page-root">
+        <header className="site-header">
+          <div className="container header-inner">
+            <div className="brand">
+              <Shield className="h-8 w-8 text-primary" />
+              <h1 className="brand-title">iReporter</h1>
+            </div>
+          </div>
+        </header>
+        <main className="container page-content">
+          <ErrorMessage
+            title="Error loading report"
+            message={error}
+            onRetry={() => window.location.reload()}
+          />
+          <Link to="/dashboard" className="btn btn-outline">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Link>
+        </main>
+      </div>
+    );
+  }
+
+  if (!user || !report) return null;
 
   return (
-    <div className="page-root">
+    <ErrorBoundary>
+      <div className="page-root">
       <header className="site-header">
         <div className="container header-inner">
           <div className="brand">
@@ -300,6 +332,7 @@ const EditReport = () => {
         </div>
       </main>
     </div>
+    </ErrorBoundary>
   );
 };
 

@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { STATUS_COLORS } from "@/utils/constants";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -62,7 +63,8 @@ const Dashboard = () => {
   if (!user) return null;
 
   return (
-    <div className="dashboard-root">
+    <ErrorBoundary>
+      <div className="dashboard-root">
       <header className="site-header">
         <div className="container header-inner">
           <div className="header-row">
@@ -159,6 +161,7 @@ const Dashboard = () => {
         )}
       </main>
     </div>
+    </ErrorBoundary>
   );
 };
 

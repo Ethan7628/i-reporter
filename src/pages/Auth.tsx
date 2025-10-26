@@ -9,6 +9,7 @@ import { loginSchema, signupSchema } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { Shield } from "lucide-react";
 import { ZodError } from "zod";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -59,8 +60,9 @@ const Auth = () => {
   };
 
   return (
-    <div className="auth-root">
-      <Card className="auth-card">
+    <ErrorBoundary>
+      <div className="auth-root">
+        <Card className="auth-card">
         <CardHeader className="auth-header">
           <div className="auth-logo">
             <Shield className="h-12 w-12 text-primary" />
@@ -117,6 +119,7 @@ const Auth = () => {
         </CardContent>
       </Card>
     </div>
+    </ErrorBoundary>
   );
 };
 

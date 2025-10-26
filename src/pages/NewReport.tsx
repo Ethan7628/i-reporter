@@ -8,6 +8,7 @@ import { LocationPicker } from "@/components/LocationPicker";
 import { reportSchema } from "@/types";
 import { FILE_CONSTRAINTS, VALIDATION_MESSAGES } from "@/utils/constants";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const NewReport = () => {
   const navigate = useNavigate();
@@ -121,7 +122,8 @@ const NewReport = () => {
   if (!user) return null;
 
   return (
-    <div className="page-root">
+    <ErrorBoundary>
+      <div className="page-root">
       <header className="site-header">
         <div className="container header-inner">
           <div className="brand">
@@ -299,6 +301,7 @@ const NewReport = () => {
         </div>
       </main>
     </div>
+    </ErrorBoundary>
   );
 };
 

@@ -13,6 +13,7 @@ import { STATUS_COLORS } from "@/utils/constants";
 import { ReportStatus } from "@/types";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorMessage } from "@/components/ErrorMessage";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -65,7 +66,8 @@ const Admin = () => {
   if (!isAuthenticated || !isAdmin) return null;
 
   return (
-    <div className="admin-root">
+    <ErrorBoundary>
+      <div className="admin-root">
       <header className="site-header admin-header">
         <div className="container header-inner">
           <div className="header-row">
@@ -185,6 +187,7 @@ const Admin = () => {
         )}
       </main>
     </div>
+    </ErrorBoundary>
   );
 };
 
