@@ -1,264 +1,194 @@
 /**
  * Report Service
  * 
- * Handles all report-related operations.
- * Currently uses mock data - will switch to real API when backend is ready.
+ * Handles all report-related operations using the backend API.
  */
 
 import { apiService, API_ENDPOINTS } from './api.service';
-import { 
-  Report, 
-  ReportStatus, 
-  CreateReportData, 
-  UpdateReportData,
-  reportSchema 
-} from '@/types';
-
-const REPORTS_KEY = 'ireporter_reports';
+import { Report, ReportStatus, CreateReportData, UpdateReportData, reportSchema } from '@/types';
 
 class ReportService {
   /**
    * Create a new report
    */
   async create(data: CreateReportData): Promise<Report> {
-    // Validate basic fields
-    const validated = reportSchema.parse({
-      title: data.title,
-      description: data.description,
-      type: data.type,
-    });
+    try {
+      // Validate input
+      const validated = reportSchema.parse({
+        title: data.title,
+        description: data.description,
+        type: data.type,
+      });
 
-    // TODO: Replace with real API call when ready
-    // const response = await apiService.post<Report>(
-    //   API_ENDPOINTS.REPORTS.CREATE,
-    //   data
-    // );
-    // if (!response.success || !response.data) {
-    //   throw new Error(response.error || 'Failed to create report');
-    // }
-    // return response.data;
+      const response = await apiService.post<Report>(
+        API_ENDPOINTS.REPORTS.CREATE,
+        {
+          ...validated,
+          location: data.location || null,
+          images: data.images || [],
+        }
+      );
 
-    // Mock implementation - will need userId from auth context in real implementation
-    const mockUserId = localStorage.getItem('ireporter_current_user');
-    const userId = mockUserId ? JSON.parse(mockUserId).id : 'unknown';
-    return this.mockCreate({
-      title: validated.title,
-      description: validated.description,
-      type: validated.type,
-      location: data.location,
-      images: data.images
-    }, userId);
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to create report');
+      }
+
+      return response.data;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to create report');
+    }
   }
 
   /**
-   * Get all reports
+   * Get all reports (admin only)
    */
   async getAll(): Promise<Report[]> {
-    // TODO: Replace with real API call when ready
-    // const response = await apiService.get<Report[]>(API_ENDPOINTS.REPORTS.GET_ALL);
-    // if (!response.success || !response.data) {
-    //   throw new Error(response.error || 'Failed to fetch reports');
-    // }
-    // return response.data;
+    try {
+      const response = await apiService.get<Report[]>(
+        API_ENDPOINTS.REPORTS.GET_ALL
+      );
 
-    // Mock implementation
-    return this.mockGetAll();
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to fetch reports');
+      }
+
+      return response.data;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to fetch reports');
+    }
   }
 
   /**
    * Get a single report by ID
    */
   async getById(id: string): Promise<Report | null> {
-    // TODO: Replace with real API call when ready
-    // const response = await apiService.get<Report>(API_ENDPOINTS.REPORTS.GET_BY_ID(id));
-    // if (!response.success) {
-    //   return null;
-    // }
-    // return response.data || null;
+    try {
+      const response = await apiService.get<Report>(
+        API_ENDPOINTS.REPORTS.GET_BY_ID(id)
+      );
 
-    // Mock implementation
-    return this.mockGetById(id);
+      if (!response.success || !response.data) {
+        return null;
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error('Get report error:', error);
+      return null;
+    }
   }
 
   /**
-   * Get all reports for a specific user
+   * Get reports for a specific user
    */
   async getUserReports(userId: string): Promise<Report[]> {
-    // TODO: Replace with real API call when ready
-    // const response = await apiService.get<Report[]>(
-    //   API_ENDPOINTS.REPORTS.GET_USER_REPORTS(userId)
-    // );
-    // if (!response.success || !response.data) {
-    //   throw new Error(response.error || 'Failed to fetch user reports');
-    // }
-    // return response.data;
+    try {
+      const response = await apiService.get<Report[]>(
+        API_ENDPOINTS.REPORTS.GET_USER_REPORTS(userId)
+      );
 
-    // Mock implementation
-    return this.mockGetAll().filter(r => r.userId === userId);
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to fetch user reports');
+      }
+
+      return response.data;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to fetch user reports');
+    }
   }
 
   /**
    * Update a report
    */
   async update(id: string, data: UpdateReportData): Promise<Report | null> {
-    // TODO: Replace with real API call when ready
-    // const response = await apiService.patch<Report>(
-    //   API_ENDPOINTS.REPORTS.UPDATE(id),
-    //   data
-    // );
-    // if (!response.success) {
-    //   throw new Error(response.error || 'Failed to update report');
-    // }
-    // return response.data || null;
+    try {
+      const response = await apiService.put<Report>(
+        API_ENDPOINTS.REPORTS.UPDATE(id),
+        data
+      );
 
-    // Mock implementation
-    return this.mockUpdate(id, data);
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to update report');
+      }
+
+      return response.data;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to update report');
+    }
   }
 
   /**
    * Delete a report
    */
   async delete(id: string): Promise<boolean> {
-    // TODO: Replace with real API call when ready
-    // const response = await apiService.delete(API_ENDPOINTS.REPORTS.DELETE(id));
-    // if (!response.success) {
-    //   throw new Error(response.error || 'Failed to delete report');
-    // }
-    // return true;
+    try {
+      const response = await apiService.delete(
+        API_ENDPOINTS.REPORTS.DELETE(id)
+      );
 
-    // Mock implementation - will need userId from auth context in real implementation
-    const mockUserId = localStorage.getItem('ireporter_current_user');
-    const userId = mockUserId ? JSON.parse(mockUserId).id : 'unknown';
-    return this.mockDelete(id, userId);
+      return response.success;
+    } catch (error) {
+      console.error('Delete report error:', error);
+      return false;
+    }
   }
 
   /**
    * Update report status (admin only)
    */
   async updateStatus(id: string, status: ReportStatus): Promise<Report | null> {
-    // TODO: Replace with real API call when ready
-    // const response = await apiService.patch<Report>(
-    //   API_ENDPOINTS.REPORTS.UPDATE_STATUS(id),
-    //   { status }
-    // );
-    // if (!response.success) {
-    //   throw new Error(response.error || 'Failed to update status');
-    // }
-    // return response.data || null;
+    try {
+      const response = await apiService.patch<Report>(
+        API_ENDPOINTS.REPORTS.UPDATE_STATUS(id),
+        { status }
+      );
 
-    // Mock implementation
-    return this.mockUpdateStatus(id, status);
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to update status');
+      }
+
+      return response.data;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to update status');
+    }
   }
 
   /**
-   * Upload image for a report
+   * Upload an image for a report
    */
   async uploadImage(reportId: string, file: File): Promise<string> {
-    // TODO: Replace with real API call when ready
-    // const response = await apiService.uploadFile<{ url: string }>(
-    //   API_ENDPOINTS.REPORTS.UPLOAD_IMAGE(reportId),
-    //   file
-    // );
-    // if (!response.success || !response.data) {
-    //   throw new Error(response.error || 'Failed to upload image');
-    // }
-    // return response.data.url;
+    try {
+      const response = await apiService.uploadFile<{ url: string }>(
+        API_ENDPOINTS.REPORTS.UPLOAD_IMAGE(reportId),
+        file
+      );
 
-    // Mock implementation - convert to base64
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  // ============= MOCK IMPLEMENTATIONS (Remove when backend is ready) =============
-
-  private mockCreate(data: CreateReportData, userId: string): Report {
-    const reports = this.mockGetAll();
-    
-    const newReport: Report = {
-      id: crypto.randomUUID(),
-      userId,
-      type: data.type,
-      title: data.title,
-      description: data.description,
-      location: null,
-      status: 'draft',
-      images: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    reports.push(newReport);
-    localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
-    return newReport;
-  }
-
-  private mockGetAll(): Report[] {
-    return JSON.parse(localStorage.getItem(REPORTS_KEY) || '[]');
-  }
-
-  private mockGetById(id: string): Report | null {
-    const reports = this.mockGetAll();
-    return reports.find(r => r.id === id) || null;
-  }
-
-  private mockUpdate(id: string, data: UpdateReportData): Report | null {
-    const reports = this.mockGetAll();
-    const index = reports.findIndex(r => r.id === id);
-    
-    if (index === -1) return null;
-
-    const report = reports[index];
-    
-    // Check if editable
-    if (['under-investigation', 'rejected', 'resolved'].includes(report.status)) {
-      if (data.status === undefined) {
-        throw new Error('Cannot edit reports that are under investigation, rejected, or resolved');
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to upload image');
       }
+
+      return response.data.url;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to upload image');
     }
-
-    reports[index] = {
-      ...report,
-      ...data,
-      updatedAt: new Date().toISOString(),
-    };
-
-    localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
-    return reports[index];
-  }
-
-  private mockDelete(id: string, userId: string): boolean {
-    const reports = this.mockGetAll();
-    const report = reports.find(r => r.id === id);
-    
-    if (!report || report.userId !== userId) return false;
-    
-    if (['under-investigation', 'rejected', 'resolved'].includes(report.status)) {
-      throw new Error('Cannot delete reports that are under investigation, rejected, or resolved');
-    }
-
-    const filtered = reports.filter(r => r.id !== id);
-    localStorage.setItem(REPORTS_KEY, JSON.stringify(filtered));
-    return true;
-  }
-
-  private mockUpdateStatus(id: string, status: ReportStatus): Report | null {
-    const reports = this.mockGetAll();
-    const index = reports.findIndex(r => r.id === id);
-    
-    if (index === -1) return null;
-
-    reports[index] = {
-      ...reports[index],
-      status,
-      updatedAt: new Date().toISOString(),
-    };
-
-    localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
-    return reports[index];
   }
 }
 

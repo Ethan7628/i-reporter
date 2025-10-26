@@ -8,8 +8,8 @@
 import { API_CONFIG, API_ENDPOINTS } from '@/config/api.config';
 import { ApiResponse, ApiError } from '@/types';
 
-// Set to false when backend is ready
-const USE_MOCK_DATA = true;
+// Backend integration enabled - set USE_MOCK_DATA to true for testing without backend
+const USE_MOCK_DATA = false;
 
 class ApiService {
   private baseURL: string;
@@ -68,9 +68,12 @@ class ApiService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    // If using mock data, skip actual API call
+    // If using mock data, return mock error
     if (USE_MOCK_DATA) {
-      throw new Error('Mock mode is enabled. Switch to real API by setting USE_MOCK_DATA = false');
+      return {
+        success: false,
+        error: 'Mock mode is enabled. Connect your backend and set USE_MOCK_DATA = false in api.service.ts',
+      };
     }
 
     const controller = new AbortController();

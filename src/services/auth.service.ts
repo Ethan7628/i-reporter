@@ -1,8 +1,7 @@
 /**
  * Authentication Service
  * 
- * Handles all authentication-related operations.
- * Currently uses mock data - will switch to real API when backend is ready.
+ * Handles all authentication-related operations using the backend API.
  */
 
 import { apiService, API_ENDPOINTS } from './api.service';
@@ -15,8 +14,8 @@ import {
   signupSchema 
 } from '@/types';
 
-// Mock storage keys
-const USERS_KEY = 'ireporter_users';
+// Storage keys for client-side session
+const AUTH_TOKEN_KEY = 'auth_token';
 const CURRENT_USER_KEY = 'ireporter_current_user';
 
 class AuthService {
@@ -28,19 +27,22 @@ class AuthService {
       // Validate input
       const validated = signupSchema.parse(credentials);
 
-      // TODO: Replace with real API call when ready
-      // const response = await apiService.post<AuthResponse>(
-      //   API_ENDPOINTS.AUTH.SIGNUP,
-      //   validated
-      // );
-      // if (!response.success || !response.data) {
-      //   return { error: response.error || 'Signup failed' };
-      // }
-      // this.setAuthToken(response.data.token);
-      // return { user: response.data.user };
+      const response = await apiService.post<AuthResponse>(
+        API_ENDPOINTS.AUTH.SIGNUP,
+        validated
+      );
 
-      // Mock implementation
-      return this.mockSignup(validated);
+      if (!response.success || !response.data) {
+        return { error: response.error || 'Signup failed' };
+      }
+
+      // Store auth token and user data
+      if (response.data.token) {
+        this.setAuthToken(response.data.token);
+      }
+      this.setCurrentUser(response.data.user);
+
+      return { user: response.data.user };
     } catch (error) {
       if (error instanceof Error) {
         return { error: error.message };
@@ -57,19 +59,22 @@ class AuthService {
       // Validate input
       const validated = loginSchema.parse(credentials);
 
-      // TODO: Replace with real API call when ready
-      // const response = await apiService.post<AuthResponse>(
-      //   API_ENDPOINTS.AUTH.LOGIN,
-      //   validated
-      // );
-      // if (!response.success || !response.data) {
-      //   return { error: response.error || 'Login failed' };
-      // }
-      // this.setAuthToken(response.data.token);
-      // return { user: response.data.user };
+      const response = await apiService.post<AuthResponse>(
+        API_ENDPOINTS.AUTH.LOGIN,
+        validated
+      );
 
-      // Mock implementation
-      return this.mockLogin(validated);
+      if (!response.success || !response.data) {
+        return { error: response.error || 'Login failed' };
+      }
+
+      // Store auth token and user data
+      if (response.data.token) {
+        this.setAuthToken(response.data.token);
+      }
+      this.setCurrentUser(response.data.user);
+
+      return { user: response.data.user };
     } catch (error) {
       if (error instanceof Error) {
         return { error: error.message };
@@ -83,37 +88,36 @@ class AuthService {
    */
   async logout(): Promise<void> {
     try {
-      // TODO: Replace with real API call when ready
-      // await apiService.post(API_ENDPOINTS.AUTH.LOGOUT);
-      
-      this.clearAuthToken();
-      localStorage.removeItem(CURRENT_USER_KEY);
+      // Call backend logout endpoint
+      await apiService.post(API_ENDPOINTS.AUTH.LOGOUT);
     } catch (error) {
-      // Still clear local data even if API call fails
       console.error('Logout error:', error);
+    } finally {
+      // Always clear local data
       this.clearAuthToken();
       localStorage.removeItem(CURRENT_USER_KEY);
     }
   }
 
   /**
-   * Get current authenticated user
+   * Get current authenticated user from backend
    */
   async getCurrentUser(): Promise<User | null> {
-    // TODO: Replace with real API call when ready
-    // const response = await apiService.get<User>(API_ENDPOINTS.AUTH.CURRENT_USER);
-    // if (!response.success || !response.data) {
-    //   return null;
-    // }
-    // return response.data;
-
-    // Mock implementation
-    const user = localStorage.getItem(CURRENT_USER_KEY);
-    return user ? JSON.parse(user) : null;
+    try {
+      const response = await apiService.get<User>(API_ENDPOINTS.AUTH.CURRENT_USER);
+      if (!response.success || !response.data) {
+        return null;
+      }
+      this.setCurrentUser(response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Get current user error:', error);
+      return null;
+    }
   }
 
   /**
-   * Get current user synchronously (for initial load)
+   * Get current user synchronously from local storage (for initial load)
    */
   getCurrentUserSync(): User | null {
     const user = localStorage.getItem(CURRENT_USER_KEY);
@@ -121,73 +125,24 @@ class AuthService {
   }
 
   /**
-   * Make a user admin (dev/testing only)
-   */
-  makeAdmin(email: string): void {
-    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    const userIndex = users.findIndex((u: User) => u.email === email);
-    
-    if (userIndex !== -1) {
-      users[userIndex].role = 'admin';
-      localStorage.setItem(USERS_KEY, JSON.stringify(users));
-      
-      const currentUser = this.getCurrentUserSync();
-      if (currentUser?.email === email) {
-        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(users[userIndex]));
-      }
-    }
-  }
-
-  /**
    * Set authentication token
    */
-  private setAuthToken(token?: string): void {
-    if (token) {
-      localStorage.setItem('auth_token', token);
-    }
+  private setAuthToken(token: string): void {
+    localStorage.setItem(AUTH_TOKEN_KEY, token);
   }
 
   /**
    * Clear authentication token
    */
   private clearAuthToken(): void {
-    localStorage.removeItem('auth_token');
+    localStorage.removeItem(AUTH_TOKEN_KEY);
   }
 
-  // ============= MOCK IMPLEMENTATIONS (Remove when backend is ready) =============
-
-  private mockSignup(data: SignupCredentials): { user: User } | { error: string } {
-    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    
-    if (users.find((u: User) => u.email === data.email)) {
-      return { error: 'Email already registered' };
-    }
-
-    const newUser: User = {
-      id: crypto.randomUUID(),
-      email: data.email,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      role: 'user',
-    };
-
-    users.push(newUser);
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(newUser));
-
-    return { user: newUser };
-  }
-
-  private mockLogin(data: LoginCredentials): { user: User } | { error: string } {
-    const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-    const user = users.find((u: User) => u.email === data.email);
-
-    if (!user) {
-      return { error: 'Invalid email or password' };
-    }
-
+  /**
+   * Set current user in local storage
+   */
+  private setCurrentUser(user: User): void {
     localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-    return { user };
   }
 }
 
