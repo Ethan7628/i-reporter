@@ -1,44 +1,41 @@
-const { body, validationResult } = require('express-validator');
+import { body, validationResult } from 'express-validator';
 
-const handleValidationErrors = (req, res, next) => {
+export const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({
-      status: 'error',
-      message: 'Validation failed',
-      errors: errors.array()
+      success: false,
+      error: 'Validation failed',
+      details: errors.array()
     });
   }
   next();
 };
 
-// User validation
-const validateUserRegistration = [
-  body('firstName').notEmpty().withMessage('First name is required'),
-  body('lastName').notEmpty().withMessage('Last name is required'),
+// Auth validations
+export const validateSignup = [
   body('email').isEmail().withMessage('Valid email is required'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('firstName').notEmpty().withMessage('First name is required'),
+  body('lastName').notEmpty().withMessage('Last name is required'),
   handleValidationErrors
 ];
 
-const validateUserLogin = [
+export const validateLogin = [
   body('email').isEmail().withMessage('Valid email is required'),
   body('password').notEmpty().withMessage('Password is required'),
   handleValidationErrors
 ];
 
-// Record validation
-const validateRecord = [
-  body('type').isIn(['red-flag', 'intervention']).withMessage('Type must be red-flag or intervention'),
+// Report validations
+export const validateReport = [
   body('title').notEmpty().withMessage('Title is required'),
   body('description').notEmpty().withMessage('Description is required'),
-  body('latitude').isFloat({ min: -90, max: 90 }).withMessage('Valid latitude is required'),
-  body('longitude').isFloat({ min: -180, max: 180 }).withMessage('Valid longitude is required'),
+  body('type').isIn(['red-flag', 'intervention']).withMessage('Type must be red-flag or intervention'),
   handleValidationErrors
 ];
 
-module.exports = {
-  validateUserRegistration,
-  validateUserLogin,
-  validateRecord
-};
+export const validateStatusUpdate = [
+  body('status').isIn(['under-investigation', 'rejected', 'resolved']).withMessage('Invalid status'),
+  handleValidationErrors
+];

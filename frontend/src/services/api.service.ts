@@ -1,10 +1,3 @@
-/**
- * API Service Layer
- * 
- * This service handles all HTTP requests to the backend.
- * Switch USE_MOCK_DATA to false when your backend is ready.
- */
-
 import { API_CONFIG, API_ENDPOINTS } from '@/config/api.config';
 import { ApiResponse, ApiError } from '@/types';
 

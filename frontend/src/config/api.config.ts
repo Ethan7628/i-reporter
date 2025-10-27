@@ -1,12 +1,5 @@
-/**
- * API Configuration
- * 
- * Update API_BASE_URL with your backend URL when ready
- * Example: https://api.yourdomain.com or http://localhost:3000/api
- */
-
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
   TIMEOUT: 30000, // 30 seconds
   HEADERS: {
     'Content-Type': 'application/json',

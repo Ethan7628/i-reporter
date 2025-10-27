@@ -1,50 +1,47 @@
-const jwt = require('jsonwebtoken');
-const db = require('../config/database');
+import jwt from 'jsonwebtoken';
+import db from '../config/database.js'; 
 
-const auth = async (req, res, next) => {
+export const auth = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
-      return res.status(401).json({ 
-        status: 'error', 
-        message: 'No token, authorization denied' 
+      return res.status(401).json({
+        success: false,
+        error: 'No token, authorization denied'
       });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    db.query(
-      'SELECT id, first_name, last_name, email, is_admin FROM users WHERE id = ?',
-      [decoded.userId],
-      (error, results) => {
-        if (error || results.length === 0) {
-          return res.status(401).json({ 
-            status: 'error', 
-            message: 'Token is not valid' 
-          });
-        }
-        
-        req.user = results[0];
-        next();
-      }
+    const users = await db.query(
+      'SELECT id, email, first_name, last_name, role FROM users WHERE id = ?',
+      [decoded.userId]
     );
+
+    if (users.length === 0) {
+      return res.status(401).json({
+        success: false,
+        error: 'Token is not valid'
+      });
+    }
+    
+    req.user = users[0];
+    next();
   } catch (error) {
-    res.status(401).json({ 
-      status: 'error', 
-      message: 'Token is not valid' 
+    res.status(401).json({
+      success: false,
+      error: 'Token is not valid'
     });
   }
 };
 
-const adminAuth = (req, res, next) => {
-  if (!req.user.is_admin) {
-    return res.status(403).json({ 
-      status: 'error', 
-      message: 'Access denied. Admin privileges required.' 
+export const adminAuth = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      error: 'Access denied. Admin privileges required.'
     });
   }
   next();
 };
-
-module.exports = { auth, adminAuth };
