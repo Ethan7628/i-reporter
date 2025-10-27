@@ -126,7 +126,7 @@ router.post('/login', validateUserLogin, (req, res) => {
             lastName: user.last_name,
             email: user.email,
             phone: user.phone,
-            isAdmin: user.is_admin
+            isAdmin: Boolean(user.is_admin)
           }
         }
       });
