@@ -62,7 +62,6 @@ class ApiService {
       return headers.has('Authorization');
     }
     
-    // Check if headers is a plain object
     if (typeof headers === 'object' && headers !== null) {
       return Object.prototype.hasOwnProperty.call(headers, 'Authorization');
     }
@@ -70,9 +69,7 @@ class ApiService {
     return false;
   }
 
-  /**
-   * Generic HTTP request method
-   */
+  
   async request<T>(
     endpoint: string,
     options: RequestInit = {}
