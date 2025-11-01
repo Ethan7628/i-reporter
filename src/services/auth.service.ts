@@ -8,7 +8,13 @@ import {
   signupSchema
 } from '@/types';
 
-// Storage keys for client-side session
+/**
+ * Authentication Service - Production Ready
+ * Handles all auth operations with backend integration
+ * NO MOCK DATA - All operations use real API calls
+ */
+
+// Storage keys for authentication tokens only
 const AUTH_TOKEN_KEY = 'auth_token';
 const CURRENT_USER_KEY = 'ireporter_current_user';
 
@@ -28,6 +34,10 @@ class AuthService {
    */
   async signup(credentials: SignupCredentials): Promise<{ user: User } | { error: string }> {
     try {
+      if (import.meta.env.DEV) {
+        console.log('[Auth] Attempting signup for:', credentials.email);
+      }
+
       // Validate input
       const validated = signupSchema.parse(credentials);
 
@@ -37,6 +47,9 @@ class AuthService {
       );
 
       if (!response.success || !response.data) {
+        if (import.meta.env.DEV) {
+          console.error('[Auth] Signup failed:', response.error);
+        }
         return { error: response.error || 'Signup failed. Please try again.' };
       }
 
@@ -48,11 +61,16 @@ class AuthService {
       }
       if (authData.user) {
         this.setCurrentUser(authData.user);
+        if (import.meta.env.DEV) {
+          console.log('[Auth] Signup successful for user:', authData.user.id);
+        }
       }
 
       return { user: authData.user };
     } catch (error) {
-      console.error('Signup error:', error);
+      if (import.meta.env.DEV) {
+        console.error('[Auth] Signup error:', error);
+      }
       
       if (error instanceof Error && error.message.includes('Network')) {
         return { error: 'Network error. Please check your connection and try again.' };
@@ -70,6 +88,10 @@ class AuthService {
    */
   async login(credentials: LoginCredentials): Promise<{ user: User } | { error: string }> {
     try {
+      if (import.meta.env.DEV) {
+        console.log('[Auth] Attempting login for:', credentials.email);
+      }
+
       // Validate input
       const validated = loginSchema.parse(credentials);
 
@@ -79,6 +101,9 @@ class AuthService {
       );
 
       if (!response.success || !response.data) {
+        if (import.meta.env.DEV) {
+          console.error('[Auth] Login failed:', response.error);
+        }
         return { error: response.error || 'Login failed. Please check your credentials.' };
       }
 
@@ -90,11 +115,16 @@ class AuthService {
       }
       if (authData.user) {
         this.setCurrentUser(authData.user);
+        if (import.meta.env.DEV) {
+          console.log('[Auth] Login successful for user:', authData.user.id);
+        }
       }
 
       return { user: authData.user };
     } catch (error) {
-      console.error('Login error:', error);
+      if (import.meta.env.DEV) {
+        console.error('[Auth] Login error:', error);
+      }
       
       if (error instanceof Error && error.message.includes('Network')) {
         return { error: 'Network error. Please check your connection and try again.' };
@@ -112,10 +142,20 @@ class AuthService {
    */
   async logout(): Promise<void> {
     try {
+      if (import.meta.env.DEV) {
+        console.log('[Auth] Logging out user');
+      }
+      
       // Call backend logout endpoint
       await apiService.post(API_ENDPOINTS.AUTH.LOGOUT);
+      
+      if (import.meta.env.DEV) {
+        console.log('[Auth] Logout successful');
+      }
     } catch (error) {
-      console.error('Logout error:', error);
+      if (import.meta.env.DEV) {
+        console.error('[Auth] Logout error:', error);
+      }
     } finally {
       // Always clear local data
       this.clearAuthToken();
@@ -128,16 +168,30 @@ class AuthService {
    */
   async getCurrentUser(): Promise<User | null> {
     try {
+      if (import.meta.env.DEV) {
+        console.log('[Auth] Fetching current user from backend');
+      }
+
       const response = await apiService.get<BackendUserResponse>(API_ENDPOINTS.AUTH.CURRENT_USER);
       if (!response.success || !response.data) {
+        if (import.meta.env.DEV) {
+          console.warn('[Auth] Failed to fetch current user:', response.error);
+        }
         return null;
       }
 
       const userData = response.data.user;
       this.setCurrentUser(userData);
+      
+      if (import.meta.env.DEV) {
+        console.log('[Auth] Current user fetched:', userData.id);
+      }
+      
       return userData;
     } catch (error) {
-      console.error('Get current user error:', error);
+      if (import.meta.env.DEV) {
+        console.error('[Auth] Get current user error:', error);
+      }
       return null;
     }
   }

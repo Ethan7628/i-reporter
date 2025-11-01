@@ -1,7 +1,8 @@
 /**
- * Authentication Hook
+ * Authentication Hook - Production Ready
  * 
- * Provides authentication state and methods to components with comprehensive error handling
+ * Provides authentication state and methods with comprehensive error handling
+ * NO MOCK DATA - All operations use real backend API calls
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -24,17 +25,28 @@ export const useAuth = () => {
         setLoading(true);
         setError(null);
         
+        if (import.meta.env.DEV) {
+          console.log('[useAuth] Initializing authentication');
+        }
+        
         // First try to get user from localStorage for immediate UI
         const localUser = authService.getCurrentUserSync();
         setUser(localUser);
         
         // Then try to validate with backend
         if (localUser) {
+          if (import.meta.env.DEV) {
+            console.log('[useAuth] Validating cached user with backend');
+          }
+          
           const currentUser = await authService.getCurrentUser();
           if (currentUser) {
             setUser(currentUser);
           } else {
             // Token might be invalid, clear local data
+            if (import.meta.env.DEV) {
+              console.warn('[useAuth] Token validation failed, clearing auth data');
+            }
             setUser(null);
             localStorage.removeItem('auth_token');
             localStorage.removeItem('ireporter_current_user');
@@ -43,7 +55,10 @@ export const useAuth = () => {
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to load user';
         setError(message);
-        console.error('Error loading user:', err);
+        
+        if (import.meta.env.DEV) {
+          console.error('[useAuth] Error loading user:', err);
+        }
         
         // Clear invalid auth data
         setUser(null);
@@ -145,6 +160,11 @@ export const useAuth = () => {
     try {
       setLoading(true);
       setError(null);
+      
+      if (import.meta.env.DEV) {
+        console.log('[useAuth] Logging out user');
+      }
+      
       await authService.logout();
       setUser(null);
       navigate('/landing');
@@ -155,7 +175,11 @@ export const useAuth = () => {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Logout failed';
       setError(message);
-      console.error('Logout error:', err);
+      
+      if (import.meta.env.DEV) {
+        console.error('[useAuth] Logout error:', err);
+      }
+      
       // Still clear user state even if logout fails
       setUser(null);
       navigate('/landing');

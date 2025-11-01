@@ -83,7 +83,11 @@ const EditReport = () => {
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to load report';
         setError(message);
-        console.error('Load report error:', err);
+        
+        if (import.meta.env.DEV) {
+          console.error('[EditReport] Load report error:', err);
+        }
+        
         toast({
           title: "Error loading report",
           description: message,

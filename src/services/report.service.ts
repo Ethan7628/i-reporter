@@ -1,9 +1,18 @@
 import { apiService, API_ENDPOINTS } from './api.service';
 import { Report, ReportStatus, CreateReportData, UpdateReportData, reportSchema } from '@/types';
 
+/**
+ * Report Service - Production Ready
+ * Handles all report operations with backend integration
+ * NO MOCK DATA - All operations use real API calls
+ */
 class ReportService {
   async create(data: CreateReportData): Promise<Report> {
     try {
+      if (import.meta.env.DEV) {
+        console.log('[Report Service] Creating report:', { title: data.title, type: data.type });
+      }
+
       // Validate input
       const validated = reportSchema.parse({
         title: data.title,
@@ -21,12 +30,21 @@ class ReportService {
       );
 
       if (!response.success || !response.data) {
+        if (import.meta.env.DEV) {
+          console.error('[Report Service] Create failed:', response.error);
+        }
         throw new Error(response.error || 'Failed to create report. Please try again.');
+      }
+
+      if (import.meta.env.DEV) {
+        console.log('[Report Service] Report created successfully:', response.data.id);
       }
 
       return response.data;
     } catch (error) {
-      console.error('Create report error:', error);
+      if (import.meta.env.DEV) {
+        console.error('[Report Service] Create report error:', error);
+      }
       
       if (error instanceof Error && error.message.includes('Network')) {
         throw new Error('Network error. Please check your connection and try again.');
