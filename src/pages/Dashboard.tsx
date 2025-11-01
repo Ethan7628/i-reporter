@@ -27,16 +27,23 @@ const Dashboard = () => {
     
     // Fetch reports if user is authenticated and has an ID
     if (isAuthenticated && user?.id) {
-      console.log('Fetching reports for user:', user.id);
+      if (import.meta.env.DEV) {
+        console.log('[Dashboard] Fetching reports for user:', user.id);
+      }
       getUserReports(user.id);
     }
   }, [isAuthenticated, user, navigate, getUserReports, authLoading]);
 
   const handleLogout = async () => {
     try {
+      if (import.meta.env.DEV) {
+        console.log('[Dashboard] User initiated logout');
+      }
       await logout();
     } catch (err) {
-      console.error('Logout error:', err);
+      if (import.meta.env.DEV) {
+        console.error('[Dashboard] Logout error:', err);
+      }
       toast({
         title: 'Logout error',
         description: 'There was a problem logging out',
@@ -51,6 +58,10 @@ const Dashboard = () => {
     }
 
     try {
+      if (import.meta.env.DEV) {
+        console.log('[Dashboard] Deleting report:', id);
+      }
+      
       const success = await deleteReport(id);
       if (success && user) {
         await getUserReports(user.id);
@@ -60,7 +71,9 @@ const Dashboard = () => {
         });
       }
     } catch (err) {
-      console.error('Delete error:', err);
+      if (import.meta.env.DEV) {
+        console.error('[Dashboard] Delete error:', err);
+      }
       toast({
         title: "Delete failed",
         description: "There was a problem deleting the report",

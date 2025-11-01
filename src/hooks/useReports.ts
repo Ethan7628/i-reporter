@@ -1,3 +1,10 @@
+/**
+ * Reports Hook - Production Ready
+ * 
+ * Provides report state and methods with comprehensive error handling
+ * NO MOCK DATA - All operations use real backend API calls
+ */
+
 import { useState, useCallback } from 'react';
 import { reportService } from '@/services/report.service';
 import { Report, ReportStatus, CreateReportData, UpdateReportData } from '@/types';
@@ -12,7 +19,11 @@ export const useReports = () => {
   const handleError = useCallback((err: unknown, defaultMessage: string) => {
     const message = err instanceof Error ? err.message : defaultMessage;
     setError(message);
-    console.error(defaultMessage, err);
+    
+    if (import.meta.env.DEV) {
+      console.error(`[useReports] ${defaultMessage}`, err);
+    }
+    
     return message;
   }, []);
 

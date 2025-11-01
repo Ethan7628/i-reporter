@@ -1,9 +1,10 @@
 import { API_CONFIG, API_ENDPOINTS } from '@/config/api.config';
 import { ApiResponse, ApiError } from '@/types';
 
-// Backend integration enabled - using real backend now
-const USE_MOCK_DATA = false;
-
+/**
+ * API Service - Production Ready
+ * Handles all HTTP requests to the backend with comprehensive error handling
+ */
 class ApiService {
   private baseURL: string;
   private timeout: number;
@@ -36,9 +37,13 @@ class ApiService {
   }
 
   /**
-   * Handle API errors
+   * Handle API errors with dev mode logging
    */
   private handleError(error: unknown): ApiError {
+    if (import.meta.env.DEV) {
+      console.error('[API Service Error]', error);
+    }
+    
     if (error instanceof Error) {
       return {
         message: error.message,
@@ -49,6 +54,34 @@ class ApiService {
       message: 'An unexpected error occurred',
       code: 'UNKNOWN_ERROR',
     };
+  }
+
+  /**
+   * Log API request details in dev mode
+   */
+  private logRequest(method: string, endpoint: string, body?: unknown): void {
+    if (import.meta.env.DEV) {
+      console.group(`[API ${method}] ${endpoint}`);
+      if (body) {
+        console.log('Request body:', body);
+      }
+      console.log('Timestamp:', new Date().toISOString());
+      console.groupEnd();
+    }
+  }
+
+  /**
+   * Log API response details in dev mode
+   */
+  private logResponse(endpoint: string, response: unknown, duration?: number): void {
+    if (import.meta.env.DEV) {
+      console.group(`[API Response] ${endpoint}`);
+      console.log('Data:', response);
+      if (duration) {
+        console.log('Duration:', `${duration}ms`);
+      }
+      console.groupEnd();
+    }
   }
 
   /**
@@ -74,8 +107,12 @@ class ApiService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
+    const startTime = Date.now();
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    // Log request in dev mode
+    this.logRequest(options.method || 'GET', endpoint, options.body);
 
     try {
       const response = await fetch(`${this.baseURL}${endpoint}`, {
@@ -85,6 +122,7 @@ class ApiService {
       });
 
       clearTimeout(timeoutId);
+      const duration = Date.now() - startTime;
 
       // Handle non-JSON responses
       const contentType = response.headers.get('content-type');
@@ -97,11 +135,24 @@ class ApiService {
       }
 
       if (!response.ok) {
+        const errorMessage = data.error || data.message || `Request failed with status ${response.status}`;
+        
+        if (import.meta.env.DEV) {
+          console.error(`[API Error] ${endpoint}`, {
+            status: response.status,
+            message: errorMessage,
+            duration: `${duration}ms`
+          });
+        }
+
         return {
           success: false,
-          error: data.error || data.message || `Request failed with status ${response.status}`,
+          error: errorMessage,
         };
       }
+
+      // Log successful response in dev mode
+      this.logResponse(endpoint, data, duration);
 
       // Extract data from backend response format
       return {
@@ -110,8 +161,12 @@ class ApiService {
       };
     } catch (error) {
       clearTimeout(timeoutId);
+      const duration = Date.now() - startTime;
       
       if (error instanceof Error && error.name === 'AbortError') {
+        if (import.meta.env.DEV) {
+          console.error(`[API Timeout] ${endpoint}`, { duration: `${duration}ms` });
+        }
         return {
           success: false,
           error: 'Request timeout - please try again',

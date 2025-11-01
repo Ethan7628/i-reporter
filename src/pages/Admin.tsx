@@ -44,13 +44,19 @@ const Admin = () => {
 
   const handleStatusChange = async (reportId: string, newStatus: ReportStatus) => {
     try {
+      if (import.meta.env.DEV) {
+        console.log('[Admin] Updating report status:', { reportId, newStatus });
+      }
+      
       const updatedReport = await updateReportStatus(reportId, newStatus);
       if (updatedReport) {
         // Refresh the reports list to show updated status
         await getAllReports();
       }
     } catch (err) {
-      console.error('Status update error:', err);
+      if (import.meta.env.DEV) {
+        console.error('[Admin] Status update error:', err);
+      }
       toast({
         title: "Status update failed",
         description: "There was a problem updating the report status",
@@ -61,9 +67,14 @@ const Admin = () => {
 
   const handleLogout = async () => {
     try {
+      if (import.meta.env.DEV) {
+        console.log('[Admin] User initiated logout');
+      }
       await logout();
     } catch (err) {
-      console.error('Logout error:', err);
+      if (import.meta.env.DEV) {
+        console.error('[Admin] Logout error:', err);
+      }
       toast({
         title: 'Logout error',
         description: 'There was a problem logging out',
