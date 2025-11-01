@@ -62,7 +62,7 @@ class ReportService {
    */
   async getAll(): Promise<Report[]> {
     try {
-      const response = await apiService.get<{ reports: Report[] }>(
+      const response = await apiService.get<Report[]>(
         API_ENDPOINTS.REPORTS.GET_ALL
       );
 
@@ -70,7 +70,7 @@ class ReportService {
         throw new Error(response.error || 'Failed to fetch reports. Please try again.');
       }
 
-      return response.data.reports || [];
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       console.error('Get all reports error:', error);
       
@@ -110,7 +110,7 @@ class ReportService {
    */
   async getUserReports(userId: string): Promise<Report[]> {
     try {
-      const response = await apiService.get<{ reports: Report[] }>(
+      const response = await apiService.get<Report[]>(
         API_ENDPOINTS.REPORTS.GET_USER_REPORTS(userId)
       );
 
@@ -118,7 +118,7 @@ class ReportService {
         throw new Error(response.error || 'Failed to fetch user reports. Please try again.');
       }
 
-      return response.data.reports || [];
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       console.error('Get user reports error:', error);
       
