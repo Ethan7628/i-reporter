@@ -17,7 +17,7 @@ export const signup = async (req: Request, res: Response) => {
 
     // Check if user already exists
     const existingUser = await query(
-      'SELECT id FROM users WHERE email = $1',
+      'SELECT id FROM users WHERE email = ?',
       [email]
     );
 
@@ -35,12 +35,16 @@ export const signup = async (req: Request, res: Response) => {
     // Create user
     const result = await query(
       `INSERT INTO users (email, password, first_name, last_name, role) 
-       VALUES ($1, $2, $3, $4, $5) 
-       RETURNING id, email, first_name, last_name, role, created_at`,
+       VALUES (?, ?, ?, ?, ?)`,
       [email, hashedPassword, firstName, lastName, 'user']
     );
 
-    const user = result.rows[0];
+    const insertId = (result as any).insertId;
+    const userResult = await query(
+      'SELECT id, email, first_name, last_name, role, created_at FROM users WHERE id = ?',
+      [insertId]
+    );
+    const user = userResult.rows[0];
 
     // Generate JWT token
     const token = generateToken({
@@ -85,7 +89,7 @@ export const login = async (req: Request, res: Response) => {
 
     // Find user
     const result = await query(
-      'SELECT id, email, password, first_name, last_name, role FROM users WHERE email = $1',
+      'SELECT id, email, password, first_name, last_name, role FROM users WHERE email = ?',
       [email]
     );
 
@@ -142,7 +146,7 @@ export const getCurrentUser = async (req: Request, res: Response) => {
     const userId = (req as any).user.userId;
 
     const result = await query(
-      'SELECT id, email, first_name, last_name, role, created_at FROM users WHERE id = $1',
+      'SELECT id, email, first_name, last_name, role, created_at FROM users WHERE id = ?',
       [userId]
     );
 

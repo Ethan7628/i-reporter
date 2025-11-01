@@ -23,7 +23,17 @@ const pool = mysql.createPool(poolConfig);
 
 export const query = async (text: string, params?: any[]) => {
   try {
-    const [rows, fields] = await pool.execute(text, params);
+    // Convert PostgreSQL-style placeholders ($1, $2) to MySQL-style (?)
+    let mysqlQuery = text;
+    if (params && params.length > 0) {
+      let paramIndex = 1;
+      mysqlQuery = text.replace(/\$\d+/g, () => {
+        paramIndex++;
+        return '?';
+      });
+    }
+    
+    const [rows, fields] = await pool.execute(mysqlQuery, params);
     return { rows, fields };
   } catch (error) {
     console.error('Database query error:', error);

@@ -41,21 +41,30 @@ router.post('/:id/images', requireAdmin, upload.single('file'), handleUploadErro
     // Get the file URL/path
     const fileUrl = `/uploads/${req.file.filename}`;
 
-    // Update report with new image
+    // Update report with new image (MySQL doesn't support array_append, use JSON operations)
     const { query } = await import('../utils/database.js');
-    const result = await query(
-      'UPDATE reports SET images = array_append(images, $1), updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
-      [fileUrl, id]
-    );
-
-    if (result.rows.length === 0) {
+    
+    // First get current images
+    const currentReport = await query('SELECT images FROM reports WHERE id = ?', [id]);
+    if (currentReport.rows.length === 0) {
       return res.status(404).json({
         success: false,
         error: 'Report not found'
       });
     }
+    
+    const currentImages = currentReport.rows[0].images || [];
+    const updatedImages = [...currentImages, fileUrl];
+    
+    const result = await query(
+      'UPDATE reports SET images = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [JSON.stringify(updatedImages), id]
+    );
+    
+    // Fetch updated report
+    const updatedResult = await query('SELECT * FROM reports WHERE id = ?', [id]);
 
-    const updatedReport = result.rows[0];
+    const updatedReport = updatedResult.rows[0];
 
     res.json({
       success: true,

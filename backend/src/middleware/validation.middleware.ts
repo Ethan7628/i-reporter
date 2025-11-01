@@ -30,7 +30,7 @@ const reportSchema = z.object({
 });
 
 const statusUpdateSchema = z.object({
-  status: z.enum(['draft', 'under-investigation', 'rejected', 'resolved'])
+  status: z.enum(['pending', 'under-investigation', 'rejected', 'resolved'])
 });
 
 // Validation middleware factory

@@ -23,13 +23,14 @@ export const createReport = async (req: Request, res: Response) => {
     }
 
     const result = await query(
-      `INSERT INTO reports (user_id, title, description, type, location, images) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
-       RETURNING *`,
-      [userId, title, description, type, location || null, []]
+      `INSERT INTO reports (user_id, title, description, type, location, images, status) 
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [userId, title, description, type, location || null, JSON.stringify([]), 'pending']
     );
 
-    const report = result.rows[0];
+    const insertId = (result as any).insertId;
+    const reportResult = await query('SELECT * FROM reports WHERE id = ?', [insertId]);
+    const report = reportResult.rows[0];
 
     res.status(201).json({
       success: true,
@@ -41,7 +42,7 @@ export const createReport = async (req: Request, res: Response) => {
         description: report.description,
         location: report.location,
         status: report.status,
-        images: report.images,
+        images: JSON.parse(report.images || '[]'),
         createdAt: report.created_at,
         updatedAt: report.updated_at
       }
@@ -57,12 +58,26 @@ export const createReport = async (req: Request, res: Response) => {
 
 export const getAllReports = async (req: Request, res: Response) => {
   try {
-    const result = await query(
-      `SELECT r.*, u.first_name, u.last_name, u.email 
-       FROM reports r 
-       JOIN users u ON r.user_id = u.id 
-       ORDER BY r.created_at DESC`
-    );
+    const user = (req as any).user;
+    
+    let result;
+    if (user.role === 'admin') {
+      result = await query(
+        `SELECT r.*, u.first_name, u.last_name, u.email 
+         FROM reports r 
+         JOIN users u ON r.user_id = u.id 
+         ORDER BY r.created_at DESC`
+      );
+    } else {
+      result = await query(
+        `SELECT r.*, u.first_name, u.last_name, u.email 
+         FROM reports r 
+         JOIN users u ON r.user_id = u.id 
+         WHERE r.user_id = ?
+         ORDER BY r.created_at DESC`,
+        [user.userId]
+      );
+    }
 
     const reports = result.rows.map(report => ({
       id: report.id,
@@ -72,7 +87,7 @@ export const getAllReports = async (req: Request, res: Response) => {
       description: report.description,
       location: report.location,
       status: report.status,
-      images: report.images,
+      images: JSON.parse(report.images || '[]'),
       createdAt: report.created_at,
       updatedAt: report.updated_at,
       user: {
@@ -84,7 +99,7 @@ export const getAllReports = async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      data: { reports }
+      data: reports
     });
   } catch (error) {
     console.error('Get all reports error:', error);
@@ -98,12 +113,13 @@ export const getAllReports = async (req: Request, res: Response) => {
 export const getReportById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const user = (req as any).user;
 
     const result = await query(
       `SELECT r.*, u.first_name, u.last_name, u.email 
        FROM reports r 
        JOIN users u ON r.user_id = u.id 
-       WHERE r.id = $1`,
+       WHERE r.id = ?`,
       [id]
     );
 
@@ -116,6 +132,14 @@ export const getReportById = async (req: Request, res: Response) => {
 
     const report = result.rows[0];
 
+    // Only owner or admin can view
+    if (user.role !== 'admin' && report.user_id !== user.userId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied'
+      });
+    }
+
     res.json({
       success: true,
       data: {
@@ -126,7 +150,7 @@ export const getReportById = async (req: Request, res: Response) => {
         description: report.description,
         location: report.location,
         status: report.status,
-        images: report.images,
+        images: JSON.parse(report.images || '[]'),
         createdAt: report.created_at,
         updatedAt: report.updated_at,
         user: {
@@ -161,7 +185,7 @@ export const getUserReports = async (req: Request, res: Response) => {
 
     const result = await query(
       `SELECT * FROM reports 
-       WHERE user_id = $1 
+       WHERE user_id = ? 
        ORDER BY created_at DESC`,
       [userId]
     );
@@ -174,14 +198,14 @@ export const getUserReports = async (req: Request, res: Response) => {
       description: report.description,
       location: report.location,
       status: report.status,
-      images: report.images,
+      images: JSON.parse(report.images || '[]'),
       createdAt: report.created_at,
       updatedAt: report.updated_at
     }));
 
     res.json({
       success: true,
-      data: { reports }
+      data: reports
     });
   } catch (error) {
     console.error('Get user reports error:', error);
@@ -201,7 +225,7 @@ export const updateReport = async (req: Request, res: Response) => {
 
     // Check if report exists and user has permission
     const existingReport = await query(
-      'SELECT * FROM reports WHERE id = $1',
+      'SELECT * FROM reports WHERE id = ?',
       [id]
     );
 
@@ -214,35 +238,35 @@ export const updateReport = async (req: Request, res: Response) => {
 
     const report = existingReport.rows[0];
 
-    // Only owner or admin can update
-    if (report.user_id !== userId && userRole !== 'admin') {
+    // Only owner can update (not admins)
+    if (report.user_id !== userId) {
       return res.status(403).json({
         success: false,
         error: 'Access denied'
       });
     }
 
-    // Cannot edit reports that are not in draft status (unless admin)
-    if (report.status !== 'draft' && userRole !== 'admin') {
+    // Cannot edit reports that are not pending
+    if (report.status !== 'pending') {
       return res.status(400).json({
         success: false,
         error: 'Cannot edit report in current status'
       });
     }
 
-    const result = await query(
+    await query(
       `UPDATE reports 
-       SET title = COALESCE($1, title),
-           description = COALESCE($2, description),
-           location = COALESCE($3, location),
-           images = COALESCE($4, images),
+       SET title = COALESCE(?, title),
+           description = COALESCE(?, description),
+           location = COALESCE(?, location),
+           images = COALESCE(?, images),
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $5
-       RETURNING *`,
-      [title, description, location, images, id]
+       WHERE id = ?`,
+      [title, description, location, images ? JSON.stringify(images) : null, id]
     );
 
-    const updatedReport = result.rows[0];
+    const updatedResult = await query('SELECT * FROM reports WHERE id = ?', [id]);
+    const updatedReport = updatedResult.rows[0];
 
     res.json({
       success: true,
@@ -254,7 +278,7 @@ export const updateReport = async (req: Request, res: Response) => {
         description: updatedReport.description,
         location: updatedReport.location,
         status: updatedReport.status,
-        images: updatedReport.images,
+        images: JSON.parse(updatedReport.images || '[]'),
         createdAt: updatedReport.created_at,
         updatedAt: updatedReport.updated_at
       }
@@ -276,7 +300,7 @@ export const deleteReport = async (req: Request, res: Response) => {
 
     // Check if report exists and user has permission
     const existingReport = await query(
-      'SELECT * FROM reports WHERE id = $1',
+      'SELECT * FROM reports WHERE id = ?',
       [id]
     );
 
@@ -289,15 +313,23 @@ export const deleteReport = async (req: Request, res: Response) => {
 
     const report = existingReport.rows[0];
 
-    // Only owner or admin can delete
-    if (report.user_id !== userId && userRole !== 'admin') {
+    // Only owner can delete
+    if (report.user_id !== userId) {
       return res.status(403).json({
         success: false,
         error: 'Access denied'
       });
     }
 
-    await query('DELETE FROM reports WHERE id = $1', [id]);
+    // Cannot delete reports that are not pending
+    if (report.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot delete report in current status'
+      });
+    }
+
+    await query('DELETE FROM reports WHERE id = ?', [id]);
 
     res.json({
       success: true,
@@ -327,20 +359,21 @@ export const updateReportStatus = async (req: Request, res: Response) => {
     }
 
     // Validate status
-    if (!['draft', 'under-investigation', 'rejected', 'resolved'].includes(status)) {
+    if (!['pending', 'under-investigation', 'rejected', 'resolved'].includes(status)) {
       return res.status(400).json({
         success: false,
         error: 'Invalid status value'
       });
     }
 
-    const result = await query(
+    await query(
       `UPDATE reports 
-       SET status = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $2
-       RETURNING *`,
+       SET status = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
       [status, id]
     );
+
+    const result = await query('SELECT * FROM reports WHERE id = ?', [id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -361,7 +394,7 @@ export const updateReportStatus = async (req: Request, res: Response) => {
         description: updatedReport.description,
         location: updatedReport.location,
         status: updatedReport.status,
-        images: updatedReport.images,
+        images: JSON.parse(updatedReport.images || '[]'),
         createdAt: updatedReport.created_at,
         updatedAt: updatedReport.updated_at
       }
