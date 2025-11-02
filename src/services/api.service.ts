@@ -140,8 +140,11 @@ class ApiService {
         if (import.meta.env.DEV) {
           console.error(`[API Error] ${endpoint}`, {
             status: response.status,
+            statusText: response.statusText,
             message: errorMessage,
-            duration: `${duration}ms`
+            data: data,
+            duration: `${duration}ms`,
+            url: `${this.baseURL}${endpoint}`
           });
         }
 
@@ -163,13 +166,31 @@ class ApiService {
       clearTimeout(timeoutId);
       const duration = Date.now() - startTime;
       
+      if (import.meta.env.DEV) {
+        console.error(`[API Request Failed] ${endpoint}`, {
+          error: error,
+          errorType: error instanceof Error ? error.name : typeof error,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          duration: `${duration}ms`,
+          url: `${this.baseURL}${endpoint}`
+        });
+      }
+      
       if (error instanceof Error && error.name === 'AbortError') {
-        if (import.meta.env.DEV) {
-          console.error(`[API Timeout] ${endpoint}`, { duration: `${duration}ms` });
-        }
         return {
           success: false,
           error: 'Request timeout - please try again',
+        };
+      }
+      
+      // Check for CORS errors
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        if (import.meta.env.DEV) {
+          console.error(`[CORS Error] Possible CORS issue or backend not running`);
+        }
+        return {
+          success: false,
+          error: 'Cannot connect to server. Please ensure the backend is running.',
         };
       }
       
