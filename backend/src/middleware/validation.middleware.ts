@@ -22,10 +22,13 @@ const reportSchema = z.object({
     .min(20, 'Description must be at least 20 characters')
     .max(2000, 'Description must be less than 2000 characters'),
   type: z.enum(['red-flag', 'intervention']),
-  location: z.object({
-    lat: z.number(),
-    lng: z.number()
-  }).optional().nullable(),
+  location: z.union([
+    z.object({
+      lat: z.number(),
+      lng: z.number()
+    }),
+    z.null()
+  ]).optional(),
   images: z.array(z.string()).optional()
 });
 
