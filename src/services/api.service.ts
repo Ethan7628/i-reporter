@@ -19,6 +19,41 @@ class ApiService {
   }
 
   /**
+   * Safe method to check if headers object has Authorization property
+   */
+  private hasAuthorizationHeader(headers?: HeadersInit): boolean {
+    if (!headers) return false;
+    
+    try {
+      // Handle different header formats
+      if (headers instanceof Headers) {
+        return headers.has('Authorization');
+      }
+      
+      if (Array.isArray(headers)) {
+        // Handle array of [key, value] pairs
+        return headers.some(([key]) => 
+          key.toLowerCase() === 'authorization'
+        );
+      }
+      
+      if (typeof headers === 'object') {
+        // Handle Record<string, string> or HeadersInit object
+        return Object.keys(headers).some(key => 
+          key.toLowerCase() === 'authorization'
+        );
+      }
+      
+      return false;
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn('[API Service] Error checking authorization header:', error);
+      }
+      return false;
+    }
+  }
+
+  /**
    * Build request headers
    */
   private getHeaders(includeAuth = true): HeadersInit {
@@ -84,25 +119,6 @@ class ApiService {
     }
   }
 
-  /**
-   * Safe method to check if headers object has Authorization property
-   */
-  private hasAuthorizationHeader(headers?: HeadersInit): boolean {
-    if (!headers) return false;
-    
-    // Check if headers is a Headers object
-    if (headers instanceof Headers) {
-      return headers.has('Authorization');
-    }
-    
-    if (typeof headers === 'object' && headers !== null) {
-      return Object.prototype.hasOwnProperty.call(headers, 'Authorization');
-    }
-    
-    return false;
-  }
-
-  
   async request<T>(
     endpoint: string,
     options: RequestInit = {}
