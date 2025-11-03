@@ -68,14 +68,22 @@ export const useReports = () => {
     }
   }, [toast, handleError]);
 
-  const createReport = useCallback(async (data: CreateReportData): Promise<Report | null> => {
+  const createReport = useCallback(async (data: CreateReportData | FormData): Promise<Report | null> => {
     try {
       setLoading(true);
       setError(null);
 
-      // Validate required fields
-      if (!data.title || !data.description || !data.type) {
-        throw new Error('Title, description, and type are required');
+      // Debug logging
+      if (import.meta.env.DEV) {
+        console.log('[useReports] Creating report with data:', data);
+        console.log('[useReports] Is FormData?', data instanceof FormData);
+        
+        if (data instanceof FormData) {
+          console.log('[useReports] FormData entries:');
+          for (let [key, value] of (data as FormData).entries()) {
+            console.log(key, value instanceof File ? `File: ${value.name}` : value);
+          }
+        }
       }
 
       const newReport = await reportService.create(data);
@@ -100,7 +108,7 @@ export const useReports = () => {
     }
   }, [toast, handleError]);
 
-  const updateReport = useCallback(async (id: string, data: UpdateReportData): Promise<Report | null> => {
+  const updateReport = useCallback(async (id: string, data: UpdateReportData | FormData): Promise<Report | null> => {
     if (!id) {
       toast({
         title: 'Error',
@@ -113,6 +121,20 @@ export const useReports = () => {
     try {
       setLoading(true);
       setError(null);
+
+      // Debug logging
+      if (import.meta.env.DEV) {
+        console.log('[useReports] Updating report with data:', data);
+        console.log('[useReports] Is FormData?', data instanceof FormData);
+        
+        if (data instanceof FormData) {
+          console.log('[useReports] FormData entries:');
+          for (let [key, value] of (data as FormData).entries()) {
+            console.log(key, value instanceof File ? `File: ${value.name}` : value);
+          }
+        }
+      }
+
       const updated = await reportService.update(id, data);
       
       if (updated) {
@@ -238,10 +260,18 @@ export const useReports = () => {
     return await updateStatus(id, status);
   }, [updateStatus]);
 
+  // Clear error state
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
   return {
+    // State
     reports,
     loading,
     error,
+    
+    // Actions
     createReport,
     updateReport,
     deleteReport,
@@ -250,5 +280,6 @@ export const useReports = () => {
     getReport,
     getAllReports,
     getUserReports,
+    clearError,
   };
 };

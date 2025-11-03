@@ -1,65 +1,62 @@
 import { apiService, API_ENDPOINTS } from './api.service';
 import { Report, ReportStatus, CreateReportData, UpdateReportData, reportSchema } from '@/types';
 
-/**
- * Report Service - Production Ready
- * Handles all report operations with backend integration
- * NO MOCK DATA - All operations use real API calls
- */
 class ReportService {
-  async create(data: CreateReportData): Promise<Report> {
+  async create(data: CreateReportData | FormData): Promise<Report> {
     try {
       if (import.meta.env.DEV) {
-        console.log('[Report Service] Creating report:', { title: data.title, type: data.type });
+        console.log('[Report Service] Creating report with:', data);
+        console.log('[Report Service] Is FormData?', data instanceof FormData);
       }
 
-      // Validate input
-      const validated = reportSchema.parse({
-        title: data.title,
-        description: data.description,
-        type: data.type,
-      });
+      let response;
 
-      const response = await apiService.post<Report>(
-        API_ENDPOINTS.REPORTS.CREATE,
-        {
-          ...validated,
-          location: data.location || null,
-          images: data.images || [],
-        }
-      );
+      if (data instanceof FormData) {
+        response = await apiService.post<Report>(
+          API_ENDPOINTS.REPORTS.CREATE,
+          data,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          }
+        );
+      } else {
+        const validated = reportSchema.parse({
+          title: data.title,
+          description: data.description,
+          type: data.type,
+        });
+
+        response = await apiService.post<Report>(
+          API_ENDPOINTS.REPORTS.CREATE,
+          {
+            ...validated,
+            location: data.location || null,
+            images: data.images || [],
+          }
+        );
+      }
 
       if (!response.success || !response.data) {
-        if (import.meta.env.DEV) {
-          console.error('[Report Service] Create failed:', response.error);
-        }
-        throw new Error(response.error || 'Failed to create report. Please try again.');
-      }
-
-      if (import.meta.env.DEV) {
-        console.log('[Report Service] Report created successfully:', response.data.id);
+        throw new Error(response.error || 'Failed to create report');
       }
 
       return response.data;
     } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('[Report Service] Create report error:', error);
-      }
+      console.error('Create report error:', error);
       
       if (error instanceof Error && error.message.includes('Network')) {
-        throw new Error('Network error. Please check your connection and try again.');
+        throw new Error('Network error. Please check your connection');
       }
       
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error('Failed to create report. Please try again.');
+      throw new Error('Failed to create report');
     }
   }
 
-  /**
-   * Get all reports
-   */
   async getAll(): Promise<Report[]> {
     try {
       const response = await apiService.get<Report[]>(
@@ -67,7 +64,7 @@ class ReportService {
       );
 
       if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to fetch reports. Please try again.');
+        throw new Error(response.error || 'Failed to fetch reports');
       }
 
       return Array.isArray(response.data) ? response.data : [];
@@ -75,19 +72,16 @@ class ReportService {
       console.error('Get all reports error:', error);
       
       if (error instanceof Error && error.message.includes('Network')) {
-        throw new Error('Network error. Please check your connection and try again.');
+        throw new Error('Network error. Please check your connection');
       }
       
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error('Failed to fetch reports. Please try again.');
+      throw new Error('Failed to fetch reports');
     }
   }
 
-  /**
-   * Get a single report by ID
-   */
   async getById(id: string): Promise<Report | null> {
     try {
       const response = await apiService.get<Report>(
@@ -105,9 +99,6 @@ class ReportService {
     }
   }
 
-  /**
-   * Get reports for a specific user
-   */
   async getUserReports(userId: string): Promise<Report[]> {
     try {
       const response = await apiService.get<Report[]>(
@@ -115,7 +106,7 @@ class ReportService {
       );
 
       if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to fetch user reports. Please try again.');
+        throw new Error(response.error || 'Failed to fetch user reports');
       }
 
       return Array.isArray(response.data) ? response.data : [];
@@ -123,28 +114,39 @@ class ReportService {
       console.error('Get user reports error:', error);
       
       if (error instanceof Error && error.message.includes('Network')) {
-        throw new Error('Network error. Please check your connection and try again.');
+        throw new Error('Network error. Please check your connection');
       }
       
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error('Failed to fetch user reports. Please try again.');
+      throw new Error('Failed to fetch user reports');
     }
   }
 
-  /**
-   * Update a report
-   */
-  async update(id: string, data: UpdateReportData): Promise<Report | null> {
+  async update(id: string, data: UpdateReportData | FormData): Promise<Report | null> {
     try {
-      const response = await apiService.put<Report>(
-        API_ENDPOINTS.REPORTS.UPDATE(id),
-        data
-      );
+      let response;
+
+      if (data instanceof FormData) {
+        response = await apiService.put<Report>(
+          API_ENDPOINTS.REPORTS.UPDATE(id),
+          data,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          }
+        );
+      } else {
+        response = await apiService.put<Report>(
+          API_ENDPOINTS.REPORTS.UPDATE(id),
+          data
+        );
+      }
 
       if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to update report. Please try again.');
+        throw new Error(response.error || 'Failed to update report');
       }
 
       return response.data;
@@ -152,19 +154,16 @@ class ReportService {
       console.error('Update report error:', error);
       
       if (error instanceof Error && error.message.includes('Network')) {
-        throw new Error('Network error. Please check your connection and try again.');
+        throw new Error('Network error. Please check your connection');
       }
       
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error('Failed to update report. Please try again.');
+      throw new Error('Failed to update report');
     }
   }
 
-  /**
-   * Delete a report
-   */
   async delete(id: string): Promise<boolean> {
     try {
       const response = await apiService.delete(
@@ -178,9 +177,6 @@ class ReportService {
     }
   }
 
-  /**
-   * Update report status (admin only)
-   */
   async updateStatus(id: string, status: ReportStatus): Promise<Report | null> {
     try {
       const response = await apiService.patch<Report>(
@@ -189,7 +185,7 @@ class ReportService {
       );
 
       if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to update status. Please try again.');
+        throw new Error(response.error || 'Failed to update status');
       }
 
       return response.data;
@@ -197,19 +193,16 @@ class ReportService {
       console.error('Update status error:', error);
       
       if (error instanceof Error && error.message.includes('Network')) {
-        throw new Error('Network error. Please check your connection and try again.');
+        throw new Error('Network error. Please check your connection');
       }
       
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error('Failed to update status. Please try again.');
+      throw new Error('Failed to update status');
     }
   }
 
-  /**
-   * Upload an image for a report
-   */
   async uploadImage(reportId: string, file: File): Promise<string> {
     try {
       const response = await apiService.uploadFile<{ url: string }>(
@@ -218,7 +211,7 @@ class ReportService {
       );
 
       if (!response.success || !response.data) {
-        throw new Error(response.error || 'Failed to upload image. Please try again.');
+        throw new Error(response.error || 'Failed to upload image');
       }
 
       return response.data.url;
@@ -226,13 +219,13 @@ class ReportService {
       console.error('Upload image error:', error);
       
       if (error instanceof Error && error.message.includes('Network')) {
-        throw new Error('Network error. Please check your connection and try again.');
+        throw new Error('Network error. Please check your connection');
       }
       
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error('Failed to upload image. Please try again.');
+      throw new Error('Failed to upload image');
     }
   }
 }

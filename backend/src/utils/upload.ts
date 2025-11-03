@@ -1,26 +1,36 @@
 import multer from 'multer';
 import path from 'path';
 import { Request } from 'express';
+import fs from 'fs';
+
+// Ensure uploads directory exists
+const uploadsDir = 'uploads/';
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 // Configure storage
 const storage = multer.diskStorage({
   destination: (req: Request, file: Express.Multer.File, cb) => {
-    cb(null, 'uploads/');
+    cb(null, uploadsDir);
   },
   filename: (req: Request, file: Express.Multer.File, cb) => {
-    // Generate unique filename with timestamp
+    // Generate unique filename with timestamp and random number
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
-    cb(null, 'image-' + uniqueSuffix + ext);
+    const baseName = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9]/g, '-');
+    cb(null, baseName + '-' + uniqueSuffix + ext);
   }
 });
 
 // File filter for images only
 const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  if (file.mimetype.startsWith('image/')) {
+  const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+  
+  if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Only image files are allowed'));
+    cb(new Error(`Invalid file type. Only ${allowedMimes.join(', ')} are allowed.`));
   }
 };
 
@@ -49,6 +59,12 @@ export const handleUploadError = (error: any, req: Request, res: any, next: any)
         error: 'Too many files. Maximum 4 images allowed.'
       });
     }
+    if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+      return res.status(400).json({
+        success: false,
+        error: 'Unexpected field name for file upload.'
+      });
+    }
   }
   
   if (error) {
@@ -59,4 +75,9 @@ export const handleUploadError = (error: any, req: Request, res: any, next: any)
   }
   
   next();
+};
+
+// Utility function to get file paths
+export const getImagePaths = (files: Express.Multer.File[]): string[] => {
+  return files.map(file => file.filename);
 };

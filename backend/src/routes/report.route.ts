@@ -9,7 +9,7 @@ import {
   updateReportStatus
 } from '../controllers/reports.controllers';
 import { authenticateToken, requireAdmin } from '../middleware/auth.middleware';
-import { validateReport, validateStatusUpdate } from '../middleware/validation.middleware';
+import { validateReport, validateReportUpdate, validateStatusUpdate } from '../middleware/validation.middleware';
 import { upload, handleUploadError } from '../utils/upload';
 
 const router = express.Router();
@@ -18,16 +18,18 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // Report CRUD operations with validation
-router.post('/', validateReport, createReport);
+router.post('/', upload.array('images', 4), handleUploadError, validateReport, createReport);
 router.get('/', getAllReports);
 router.get('/user/:userId', getUserReports);
 router.get('/:id', getReportById);
-router.put('/:id', validateReport, updateReport);
+router.put('/:id', upload.array('images', 4), handleUploadError, validateReportUpdate, updateReport);
 router.delete('/:id', deleteReport);
 
 // Admin only routes with validation
 router.patch('/:id/status', requireAdmin, validateStatusUpdate, updateReportStatus);
-router.post('/:id/images', requireAdmin, upload.single('file'), handleUploadError, async (req, res) => {
+
+// Image upload endpoint (admin only)
+router.post('/:id/images', requireAdmin, upload.single('image'), handleUploadError, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -41,7 +43,7 @@ router.post('/:id/images', requireAdmin, upload.single('file'), handleUploadErro
     // Get the file URL/path
     const fileUrl = `/uploads/${req.file.filename}`;
 
-    // Update report with new image (MySQL doesn't support array_append, use JSON operations)
+    // Update report with new image
     const { query } = await import('../utils/database.js');
     
     // First get current images
@@ -53,17 +55,16 @@ router.post('/:id/images', requireAdmin, upload.single('file'), handleUploadErro
       });
     }
     
-    const currentImages = currentReport.rows[0].images || [];
+    const currentImages = JSON.parse(currentReport.rows[0].images || '[]');
     const updatedImages = [...currentImages, fileUrl];
     
-    const result = await query(
+    await query(
       'UPDATE reports SET images = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [JSON.stringify(updatedImages), id]
     );
     
     // Fetch updated report
     const updatedResult = await query('SELECT * FROM reports WHERE id = ?', [id]);
-
     const updatedReport = updatedResult.rows[0];
 
     res.json({
@@ -78,7 +79,7 @@ router.post('/:id/images', requireAdmin, upload.single('file'), handleUploadErro
           description: updatedReport.description,
           location: updatedReport.location,
           status: updatedReport.status,
-          images: updatedReport.images,
+          images: JSON.parse(updatedReport.images || '[]'),
           createdAt: updatedReport.created_at,
           updatedAt: updatedReport.updated_at
         }

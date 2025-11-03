@@ -14,7 +14,8 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required')
 });
 
-const reportSchema = z.object({
+// For creating new reports (all fields required)
+const reportCreateSchema = z.object({
   title: z.string()
     .min(10, 'Title must be at least 10 characters')
     .max(200, 'Title must be less than 200 characters'),
@@ -32,8 +33,30 @@ const reportSchema = z.object({
   images: z.array(z.string()).optional()
 });
 
+// For updating reports (all fields optional)
+const reportUpdateSchema = z.object({
+  title: z.string()
+    .min(10, 'Title must be at least 10 characters')
+    .max(200, 'Title must be less than 200 characters')
+    .optional(),
+  description: z.string()
+    .min(20, 'Description must be at least 20 characters')
+    .max(2000, 'Description must be less than 2000 characters')
+    .optional(),
+  type: z.enum(['red-flag', 'intervention']).optional(),
+  location: z.union([
+    z.object({
+      lat: z.number(),
+      lng: z.number()
+    }),
+    z.null()
+  ]).optional(),
+  images: z.array(z.string()).optional()
+});
+
+// Fixed status enum to match your database
 const statusUpdateSchema = z.object({
-  status: z.enum(['pending', 'under-investigation', 'rejected', 'resolved'])
+  status: z.enum(['draft', 'under-investigation', 'rejected', 'resolved'])
 });
 
 // Validation middleware factory
@@ -62,5 +85,6 @@ const validate = (schema: z.ZodSchema<any>) => {
 // Export validation middlewares
 export const validateSignup = validate(signupSchema);
 export const validateLogin = validate(loginSchema);
-export const validateReport = validate(reportSchema);
+export const validateReport = validate(reportCreateSchema);
+export const validateReportUpdate = validate(reportUpdateSchema);
 export const validateStatusUpdate = validate(statusUpdateSchema);

@@ -148,7 +148,7 @@ const NewReport = () => {
           <form onSubmit={handleSubmit} className="report-form">
             {/* Report Type Selection */}
             <div className="form-section">
-              <label className="form-label">Report Type *</label>
+              <label className="form-label">Report Type </label>
               <div className="radio-group">
                 <label className="radio-option">
                   <input
@@ -192,7 +192,7 @@ const NewReport = () => {
 
             {/* Title Input */}
             <div className="form-section">
-              <label htmlFor="title" className="form-label">Title *</label>
+              <label htmlFor="title" className="form-label">Title </label>
               <input
                 id="title"
                 type="text"
@@ -206,7 +206,7 @@ const NewReport = () => {
 
             {/* Description Textarea */}
             <div className="form-section">
-              <label htmlFor="description" className="form-label">Description *</label>
+              <label htmlFor="description" className="form-label">Description </label>
               <textarea
                 id="description"
                 className="form-textarea"

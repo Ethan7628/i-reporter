@@ -74,7 +74,11 @@ const VALID_STATUS_VALUES: string[] = ['draft', 'under-investigation', 'rejected
 // Utility functions
 const parseImages = (images: any): string[] => {
   try {
-    return Array.isArray(images) ? images : JSON.parse(images || '[]');
+    if (Array.isArray(images)) return images;
+    if (typeof images === 'string') {
+      return JSON.parse(images || '[]');
+    }
+    return [];
   } catch (error) {
     console.error('Error parsing images:', error);
     return [];
@@ -128,6 +132,36 @@ const canEditReport = (report: Report): boolean => {
   return report.status === 'draft';
 };
 
+// Get image paths from uploaded files
+const getImagePaths = (files: Express.Multer.File[]): string[] => {
+  return files.map(file => `/uploads/${file.filename}`);
+};
+
+// Debug function to log upload details
+const debugFileUpload = (req: Request): void => {
+  console.log('=== FILE UPLOAD DEBUG ===');
+  console.log('Request method:', req.method);
+  console.log('Request headers:', req.headers['content-type']);
+  console.log('Request body keys:', Object.keys(req.body));
+  console.log('Files received:', req.files);
+  
+  if (req.files && Array.isArray(req.files)) {
+    console.log('Number of files:', req.files.length);
+    (req.files as Express.Multer.File[]).forEach((file, index) => {
+      console.log(`File ${index + 1}:`, {
+        fieldname: file.fieldname,
+        originalname: file.originalname,
+        filename: file.filename,
+        size: file.size,
+        mimetype: file.mimetype
+      });
+    });
+  } else {
+    console.log('No files found in req.files');
+  }
+  console.log('=== END DEBUG ===');
+};
+
 // Controller functions
 export const createReport = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -136,6 +170,9 @@ export const createReport = async (req: Request, res: Response): Promise<void> =
     const body: CreateReportBody = req.body;
     const { title, description, type, location } = body;
     const reportId: string = uuidv4();
+
+    // Debug file upload
+    debugFileUpload(req);
 
     // Validate required fields
     if (!title || !description || !type) {
@@ -156,13 +193,25 @@ export const createReport = async (req: Request, res: Response): Promise<void> =
     }
 
     const locationValue: string = location ? JSON.stringify(location) : 'null';
+    
+    // Handle uploaded images
+    let imagePaths: string[] = [];
+    if (req.files && Array.isArray(req.files)) {
+      imagePaths = getImagePaths(req.files as Express.Multer.File[]);
+      console.log('Image paths to save to DB:', imagePaths);
+    } else {
+      console.log('No images found in request');
+    }
 
-    // Insert the report with generated UUID
-    await query(
-      `INSERT INTO reports (id, user_id, title, description, type, location, images, status) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [reportId, userId, title, description, type, locationValue, JSON.stringify([]), 'draft']
-    );
+    // Insert the report with generated UUID and image paths
+    const insertQuery = `INSERT INTO reports (id, user_id, title, description, type, location, images, status) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    const insertParams = [reportId, userId, title, description, type, locationValue, JSON.stringify(imagePaths), 'draft'];
+    
+    console.log('Executing query:', insertQuery);
+    console.log('With parameters:', insertParams);
+
+    await query(insertQuery, insertParams);
 
     // Get the created report
     const reportResult = await query(
@@ -179,12 +228,14 @@ export const createReport = async (req: Request, res: Response): Promise<void> =
     }
 
     const report: Report = reportResult.rows[0] as Report;
+    console.log('Final report from DB - images field:', report.images);
 
     res.status(201).json({
       success: true,
       data: buildReportResponse(report)
     });
   } catch (error) {
+    console.error('Create report error:', error);
     handleDatabaseError(error, res);
   }
 };
@@ -318,7 +369,10 @@ export const updateReport = async (req: Request, res: Response): Promise<void> =
     const authReq = req as AuthRequest;
     const userId: string = authReq.user.userId;
     const body: UpdateReportBody = req.body;
-    const { title, description, location, images } = body;
+    const { title, description, location } = body;
+
+    // Debug file upload for updates
+    debugFileUpload(req);
 
     const existingReport = await query(
       'SELECT * FROM reports WHERE id = ?',
@@ -351,15 +405,24 @@ export const updateReport = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
+    // Handle new uploaded images
+    let imagesToSave = report.images;
+    if (req.files && Array.isArray(req.files) && (req.files as Express.Multer.File[]).length > 0) {
+      const newImagePaths = getImagePaths(req.files as Express.Multer.File[]);
+      const existingImages = parseImages(report.images);
+      imagesToSave = JSON.stringify([...existingImages, ...newImagePaths]);
+      console.log('Updated images to save:', imagesToSave);
+    }
+
     await query(
       `UPDATE reports 
        SET title = COALESCE(?, title),
            description = COALESCE(?, description),
            location = COALESCE(?, location),
-           images = COALESCE(?, images),
+           images = ?,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
-      [title, description, location, images ? JSON.stringify(images) : null, id]
+      [title, description, location, imagesToSave, id]
     );
 
     const updatedResult = await query('SELECT * FROM reports WHERE id = ?', [id]);
@@ -370,6 +433,7 @@ export const updateReport = async (req: Request, res: Response): Promise<void> =
       data: buildReportResponse(updatedReport)
     });
   } catch (error) {
+    console.error('Update report error:', error);
     handleDatabaseError(error, res);
   }
 };
