@@ -22,15 +22,27 @@ export const createReport = async (req: Request, res: Response) => {
       });
     }
 
-    const result = await query(
+    // Ensure location is stored as JSON string when provided
+    const locationValue = location ? JSON.stringify(location) : null;
+
+    const insertResult: any = await query(
       `INSERT INTO reports (user_id, title, description, type, location, images, status) 
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [userId, title, description, type, location || null, JSON.stringify([]), 'pending']
+      [userId, title, description, type, locationValue, JSON.stringify([]), 'pending']
     );
 
-    const insertId = (result as any).insertId;
+    // mysql2 returns ResultSetHeader with insertId under rows
+    const insertId: number | undefined = insertResult?.rows?.insertId ?? (insertResult as any)?.insertId;
+    if (!insertId) {
+      console.error('Create report error: insertId missing from insert result', insertResult);
+      return res.status(500).json({
+        success: false,
+        error: 'Internal server error while creating report (no insert id)'
+      });
+    }
+
     const reportResult = await query('SELECT * FROM reports WHERE id = ?', [insertId]);
-    const report = reportResult.rows[0];
+    const report = (reportResult.rows as any[])[0];
 
     res.status(201).json({
       success: true,
@@ -42,7 +54,7 @@ export const createReport = async (req: Request, res: Response) => {
         description: report.description,
         location: report.location,
         status: report.status,
-        images: JSON.parse(report.images || '[]'),
+        images: Array.isArray(report.images) ? report.images : JSON.parse(report.images || '[]'),
         createdAt: report.created_at,
         updatedAt: report.updated_at
       }
@@ -87,7 +99,7 @@ export const getAllReports = async (req: Request, res: Response) => {
       description: report.description,
       location: report.location,
       status: report.status,
-      images: JSON.parse(report.images || '[]'),
+      images: Array.isArray(report.images) ? report.images : JSON.parse(report.images || '[]'),
       createdAt: report.created_at,
       updatedAt: report.updated_at,
       user: {
@@ -150,7 +162,7 @@ export const getReportById = async (req: Request, res: Response) => {
         description: report.description,
         location: report.location,
         status: report.status,
-        images: JSON.parse(report.images || '[]'),
+         images: Array.isArray(report.images) ? report.images : JSON.parse(report.images || '[]'),
         createdAt: report.created_at,
         updatedAt: report.updated_at,
         user: {
@@ -198,7 +210,7 @@ export const getUserReports = async (req: Request, res: Response) => {
       description: report.description,
       location: report.location,
       status: report.status,
-      images: JSON.parse(report.images || '[]'),
+      images: Array.isArray(report.images) ? report.images : JSON.parse(report.images || '[]'),
       createdAt: report.created_at,
       updatedAt: report.updated_at
     }));
@@ -278,7 +290,7 @@ export const updateReport = async (req: Request, res: Response) => {
         description: updatedReport.description,
         location: updatedReport.location,
         status: updatedReport.status,
-        images: JSON.parse(updatedReport.images || '[]'),
+         images: Array.isArray(updatedReport.images) ? updatedReport.images : JSON.parse(updatedReport.images || '[]'),
         createdAt: updatedReport.created_at,
         updatedAt: updatedReport.updated_at
       }
@@ -394,7 +406,7 @@ export const updateReportStatus = async (req: Request, res: Response) => {
         description: updatedReport.description,
         location: updatedReport.location,
         status: updatedReport.status,
-        images: JSON.parse(updatedReport.images || '[]'),
+        images: Array.isArray(updatedReport.images) ? updatedReport.images : JSON.parse(updatedReport.images || '[]'),
         createdAt: updatedReport.created_at,
         updatedAt: updatedReport.updated_at
       }
