@@ -3,240 +3,283 @@ import bcrypt from 'bcryptjs';
 import { query } from '../utils/database';
 import { generateToken, verifyToken } from '../utils/jwt';
 
-export const signup = async (req: Request, res: Response) => {
-  try {
-    const { email, password, firstName, lastName } = req.body;
+// Types
+interface User {
+  id: string;
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+  created_at?: string;
+}
 
-    // Validate required fields
+interface TokenPayload {
+  userId: string;
+  email: string;
+  role: string;
+}
+
+interface AuthRequest extends Request {
+  user: TokenPayload;
+}
+
+interface SignupBody {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}
+
+interface LoginBody {
+  email: string;
+  password: string;
+}
+
+interface UserResponse {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
+
+interface AuthResponse {
+  success: boolean;
+  data?: {
+    user: UserResponse;
+    token?: string;
+  };
+  error?: string;
+  message?: string;
+}
+
+interface DatabaseResult {
+  rows: any[];
+  insertId?: string;
+}
+
+// Utility functions
+const buildUserResponse = (user: User): UserResponse => ({
+  id: user.id,
+  email: user.email,
+  firstName: user.first_name,
+  lastName: user.last_name,
+  role: user.role
+});
+
+const handleAuthError = (error: unknown, res: Response, context: string): void => {
+  console.error(`${context} error:`, error);
+  res.status(500).json({
+    success: false,
+    error: 'Internal server error'
+  });
+};
+
+export const signup = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const body: SignupBody = req.body;
+    const { email, password, firstName, lastName } = body;
+
     if (!email || !password || !firstName || !lastName) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'All fields are required'
       });
+      return;
     }
 
-    // Check if user already exists
-    const existingUser = await query(
+    const existingUser: DatabaseResult = await query(
       'SELECT id FROM users WHERE email = ?',
       [email]
     );
 
     if (existingUser.rows.length > 0) {
-      return res.status(409).json({
+      res.status(409).json({
         success: false,
-        error: 'User already exists with this email'
+        error: 'User already exists'
       });
+      return;
     }
 
-    // Hash password
-    const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const hashedPassword: string = await bcrypt.hash(password, 12);
 
-    // Create user
-    const result = await query(
+    const result: DatabaseResult = await query(
       `INSERT INTO users (email, password, first_name, last_name, role) 
        VALUES (?, ?, ?, ?, ?)`,
       [email, hashedPassword, firstName, lastName, 'user']
     );
 
-    const insertId = (result as any).insertId;
-    const userResult = await query(
-      'SELECT id, email, first_name, last_name, role, created_at FROM users WHERE id = ?',
+    const insertId: string | undefined = result.insertId || result.rows?.[0]?.insertId;
+    
+    if (!insertId) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to create user'
+      });
+      return;
+    }
+
+    const userResult: DatabaseResult = await query(
+      'SELECT id, email, first_name, last_name, role FROM users WHERE id = ?',
       [insertId]
     );
-    const user = userResult.rows[0];
 
-    // Generate JWT token
-    const token = generateToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role
+    const user: User = userResult.rows[0] as User;
+    const token: string = generateToken({ 
+      userId: user.id, 
+      email: user.email, 
+      role: user.role 
     });
 
-    res.status(201).json({
+    const response: AuthResponse = {
       success: true,
       data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.first_name,
-          lastName: user.last_name,
-          role: user.role
-        },
+        user: buildUserResponse(user),
         token
       }
-    });
+    };
+
+    res.status(201).json(response);
+
   } catch (error) {
-    console.error('Signup error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Internal server error during signup'
-    });
+    handleAuthError(error, res, 'Signup');
   }
 };
 
-export const login = async (req: Request, res: Response) => {
+export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const body: LoginBody = req.body;
+    const { email, password } = body;
 
-    // Validate required fields
     if (!email || !password) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Email and password are required'
       });
+      return;
     }
 
-    // Find user
-    const result = await query(
+    const result: DatabaseResult = await query(
       'SELECT id, email, password, first_name, last_name, role FROM users WHERE email = ?',
       [email]
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'Invalid email or password'
       });
+      return;
     }
 
-    const user = result.rows[0];
-
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const user: User = result.rows[0] as User;
+    const isPasswordValid: boolean = await bcrypt.compare(password, user.password);
+    
     if (!isPasswordValid) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'Invalid email or password'
       });
+      return;
     }
 
-    // Generate JWT token
-    const token = generateToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role
+    const token: string = generateToken({ 
+      userId: user.id, 
+      email: user.email, 
+      role: user.role 
     });
 
-    res.json({
+    const response: AuthResponse = {
       success: true,
       data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.first_name,
-          lastName: user.last_name,
-          role: user.role
-        },
+        user: buildUserResponse(user),
         token
       }
-    });
+    };
+
+    res.json(response);
+
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Internal server error during login'
-    });
+    handleAuthError(error, res, 'Login');
   }
 };
 
-export const getCurrentUser = async (req: Request, res: Response) => {
+export const getCurrentUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    // User is attached to req by auth middleware
-    const userId = (req as any).user.userId;
+    const authReq = req as AuthRequest;
+    const userId: string = authReq.user.userId;
 
-    const result = await query(
-      'SELECT id, email, first_name, last_name, role, created_at FROM users WHERE id = ?',
+    const result: DatabaseResult = await query(
+      'SELECT id, email, first_name, last_name, role FROM users WHERE id = ?',
       [userId]
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'User not found'
       });
+      return;
     }
 
-    const user = result.rows[0];
-
-    res.json({
+    const user: User = result.rows[0] as User;
+    const response: AuthResponse = {
       success: true,
       data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.first_name,
-          lastName: user.last_name,
-          role: user.role
-        }
+        user: buildUserResponse(user)
       }
-    });
+    };
+
+    res.json(response);
+
   } catch (error) {
-    console.error('Get current user error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Internal server error'
-    });
+    handleAuthError(error, res, 'Get current user');
   }
 };
 
-export const logout = async (req: Request, res: Response) => {
-  try {
-    // With JWT, logout is handled on client side by removing token
-    // But we can add token blacklisting here if needed
-    res.json({
-      success: true,
-      message: 'Logged out successfully'
-    });
-  } catch (error) {
-    console.error('Logout error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Internal server error during logout'
-    });
-  }
+export const logout = async (req: Request, res: Response): Promise<void> => {
+  const response: AuthResponse = {
+    success: true,
+    message: 'Logged out successfully'
+  };
+  
+  res.json(response);
 };
 
-export const refreshToken = async (req: Request, res: Response) => {
+export const refreshToken = async (req: Request, res: Response): Promise<void> => {
   try {
-    const authHeader = req.headers.authorization;
+    const authHeader: string | undefined = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'Authorization token required'
       });
+      return;
     }
 
-    const token = authHeader.substring(7);
+    const token: string = authHeader.substring(7);
+    const decoded: TokenPayload = verifyToken(token) as TokenPayload;
     
-    try {
-      const decoded = verifyToken(token);
-      
-      // Generate new token
-      const newToken = generateToken({
-        userId: decoded.userId,
-        email: decoded.email,
-        role: decoded.role
-      });
+    const newToken: string = generateToken({
+      userId: decoded.userId,
+      email: decoded.email,
+      role: decoded.role
+    });
 
-      res.json({
-        success: true,
-        data: {
-          token: newToken
-        }
-      });
-    } catch (error) {
-      return res.status(401).json({
-        success: false,
-        error: 'Invalid or expired token'
-      });
-    }
+    const response: AuthResponse = {
+      success: true,
+      data: { token: newToken }
+    };
+
+    res.json(response);
+
   } catch (error) {
     console.error('Refresh token error:', error);
-    res.status(500).json({
+    res.status(401).json({
       success: false,
-      error: 'Internal server error'
+      error: 'Invalid or expired token'
     });
   }
 };

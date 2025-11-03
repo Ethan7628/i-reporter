@@ -24,13 +24,14 @@ if (!fs.existsSync(uploadsDir)) {
   console.log('✅ Uploads directory created');
 }
 
-// Middleware
+// Middleware - INCREASED PAYLOAD SIZE LIMIT
 app.use(helmet());
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increased from default 100KB to 50MB
+app.use(express.urlencoded({ extended: true, limit: '50mb' })); // For form data
 app.use('/uploads', express.static('uploads'));
 
 // Test database connection
@@ -42,8 +43,8 @@ app.use('/api/reports', reportRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    success: true, 
+  res.json({
+    success: true,
     message: 'iReporter API is running',
     timestamp: new Date().toISOString()
   });
