@@ -22,8 +22,8 @@ export const createReport = async (req: Request, res: Response) => {
       });
     }
 
-    // Ensure location is stored as JSON string when provided
-    const locationValue = location ? JSON.stringify(location) : null;
+    // Ensure location is stored as JSON text when not provided (JSON column may be NOT NULL)
+    const locationValue = location ? JSON.stringify(location) : 'null';
 
     const insertResult: any = await query(
       `INSERT INTO reports (user_id, title, description, type, location, images, status) 
@@ -60,7 +60,25 @@ export const createReport = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Create report error:', error);
+    const err: any = error;
+    console.error('Create report error:', err);
+
+    // Map common MySQL errors to user-friendly messages
+    if (err && typeof err === 'object' && 'code' in err) {
+      if (err.code === 'ER_DATA_TOO_LONG') {
+        return res.status(400).json({
+          success: false,
+          error: 'One of the fields is too long. Please shorten your description and try again.'
+        });
+      }
+      if (err.code === 'ER_BAD_NULL_ERROR') {
+        return res.status(400).json({
+          success: false,
+          error: 'A required field was missing. Please ensure all fields are filled.'
+        });
+      }
+    }
+
     res.status(500).json({
       success: false,
       error: 'Internal server error while creating report'
