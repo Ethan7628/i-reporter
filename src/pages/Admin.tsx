@@ -18,7 +18,8 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, logout, isAuthenticated, isAdmin, loading: authLoading } = useAuth();
+  const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const { reports, getAllReports, updateReportStatus, loading: reportsLoading, error } = useReports();
 
   useEffect(() => {

@@ -1,10 +1,14 @@
 import { Navigate } from "react-router-dom";
-import { authService } from "@/services/auth.service";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
-  const user = authService.getCurrentUserSync();
+  const { isAuthenticated, loading } = useAuth();
   
-  if (user) {
+  if (loading) {
+    return null;
+  }
+  
+  if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
   
