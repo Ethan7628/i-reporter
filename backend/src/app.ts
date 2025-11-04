@@ -30,6 +30,18 @@ app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   credentials: true
 }));
+
+// Only parse JSON and URL-encoded bodies, NOT multipart/form-data
+// Multipart requests will be handled by multer middleware in routes
+app.use((req, res, next) => {
+  const contentType = req.headers['content-type'] || '';
+  if (contentType.includes('multipart/form-data')) {
+    // Skip body parsing for multipart - let multer handle it
+    return next();
+  }
+  next();
+});
+
 app.use(express.json({ limit: '50mb' })); // Increased from default 100KB to 50MB
 app.use(express.urlencoded({ extended: true, limit: '50mb' })); // For form data
 app.use('/uploads', express.static('uploads'));
