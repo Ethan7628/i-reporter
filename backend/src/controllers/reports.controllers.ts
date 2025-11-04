@@ -407,7 +407,9 @@ export const updateReport = async (req: Request, res: Response): Promise<void> =
     let title = report.title;
     let description = report.description;
     let location = report.location;
-    let imagesToSave = report.images;
+    
+    // Parse existing images from DB (it's stored as JSON string)
+    let existingImages: string[] = parseImages(report.images);
 
     // If we have form data (multipart), get fields from body
     if (req.body.title !== undefined) title = req.body.title;
@@ -423,17 +425,16 @@ export const updateReport = async (req: Request, res: Response): Promise<void> =
       }
     }
 
-    // Handle new uploaded images
+    // Handle new uploaded images - append to existing images
     if (req.files && Array.isArray(req.files) && (req.files as Express.Multer.File[]).length > 0) {
       const newImagePaths = getImagePaths(req.files as Express.Multer.File[]);
-      const existingImages = parseImages(report.images);
-      imagesToSave = JSON.stringify([...existingImages, ...newImagePaths]);
-      console.log('Updated images to save:', imagesToSave);
+      existingImages = [...existingImages, ...newImagePaths];
+      console.log('Added new images. Total images:', existingImages);
     }
 
-    // Ensure no undefined values for database
+    // Prepare values for database
     const locationValue = location && location !== 'null' ? JSON.stringify(location) : null;
-    const imagesValue = imagesToSave || '[]';
+    const imagesValue = JSON.stringify(existingImages);
 
     console.log('Final values for DB update:', {
       title,
