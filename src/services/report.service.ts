@@ -1,5 +1,5 @@
 import { apiService, API_ENDPOINTS } from './api.service';
-import { Report, ReportStatus, CreateReportData, UpdateReportData, reportSchema } from '@/types';
+import { Report, ReportStatus, CreateReportData, UpdateReportData } from '@/types';
 
 class ReportService {
   async create(data: CreateReportData | FormData): Promise<Report> {
@@ -9,34 +9,10 @@ class ReportService {
         console.log('[Report Service] Is FormData?', data instanceof FormData);
       }
 
-      let response;
-
-      if (data instanceof FormData) {
-        response = await apiService.post<Report>(
-          API_ENDPOINTS.REPORTS.CREATE,
-          data,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
-          }
-        );
-      } else {
-        const validated = reportSchema.parse({
-          title: data.title,
-          description: data.description,
-          type: data.type,
-        });
-
-        response = await apiService.post<Report>(
-          API_ENDPOINTS.REPORTS.CREATE,
-          {
-            ...validated,
-            location: data.location || null,
-            images: data.images || [],
-          }
-        );
-      }
+      const response = await apiService.post<Report>(
+        API_ENDPOINTS.REPORTS.CREATE,
+        data
+      );
 
       if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to create report');
@@ -126,24 +102,10 @@ class ReportService {
 
   async update(id: string, data: UpdateReportData | FormData): Promise<Report | null> {
     try {
-      let response;
-
-      if (data instanceof FormData) {
-        response = await apiService.put<Report>(
-          API_ENDPOINTS.REPORTS.UPDATE(id),
-          data,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
-          }
-        );
-      } else {
-        response = await apiService.put<Report>(
-          API_ENDPOINTS.REPORTS.UPDATE(id),
-          data
-        );
-      }
+      const response = await apiService.put<Report>(
+        API_ENDPOINTS.REPORTS.UPDATE(id),
+        data
+      );
 
       if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to update report');

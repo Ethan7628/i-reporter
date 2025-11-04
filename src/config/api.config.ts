@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
 
 export const API_CONFIG = {
   BASE_URL: API_BASE_URL,
@@ -24,6 +24,6 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/api/reports/${id}`,
     DELETE: (id: string) => `/api/reports/${id}`,
     UPDATE_STATUS: (id: string) => `/api/reports/${id}/status`,
-    UPLOAD_IMAGE: (id: string) => `/api/reports/${id}/images`,
+    UPLOAD_IMAGE: (id: string) => `/api/reports/${id}/upload`,
   },
 };

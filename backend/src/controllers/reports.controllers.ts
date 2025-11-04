@@ -368,8 +368,6 @@ export const updateReport = async (req: Request, res: Response): Promise<void> =
     const { id } = req.params;
     const authReq = req as AuthRequest;
     const userId: string = authReq.user.userId;
-    const body: UpdateReportBody = req.body;
-    const { title, description, location } = body;
 
     // Debug file upload for updates
     debugFileUpload(req);
@@ -405,8 +403,27 @@ export const updateReport = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Handle new uploaded images
+    // Handle form data - check both body and file uploads
+    let title = report.title;
+    let description = report.description;
+    let location = report.location;
     let imagesToSave = report.images;
+
+    // If we have form data (multipart), get fields from body
+    if (req.body.title !== undefined) title = req.body.title;
+    if (req.body.description !== undefined) description = req.body.description;
+    if (req.body.location !== undefined) {
+      try {
+        location = typeof req.body.location === 'string' 
+          ? JSON.parse(req.body.location) 
+          : req.body.location;
+      } catch (e) {
+        console.error('Error parsing location:', e);
+        location = report.location;
+      }
+    }
+
+    // Handle new uploaded images
     if (req.files && Array.isArray(req.files) && (req.files as Express.Multer.File[]).length > 0) {
       const newImagePaths = getImagePaths(req.files as Express.Multer.File[]);
       const existingImages = parseImages(report.images);
@@ -414,15 +431,26 @@ export const updateReport = async (req: Request, res: Response): Promise<void> =
       console.log('Updated images to save:', imagesToSave);
     }
 
+    // Ensure no undefined values for database
+    const locationValue = location && location !== 'null' ? JSON.stringify(location) : null;
+    const imagesValue = imagesToSave || '[]';
+
+    console.log('Final values for DB update:', {
+      title,
+      description,
+      location: locationValue,
+      images: imagesValue
+    });
+
     await query(
       `UPDATE reports 
-       SET title = COALESCE(?, title),
-           description = COALESCE(?, description),
-           location = COALESCE(?, location),
+       SET title = ?,
+           description = ?,
+           location = ?,
            images = ?,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
-      [title, description, location, imagesToSave, id]
+      [title, description, locationValue, imagesValue, id]
     );
 
     const updatedResult = await query('SELECT * FROM reports WHERE id = ?', [id]);

@@ -176,79 +176,88 @@ const EditReport = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!id || !report) return;
+  if (!id || !report) return;
 
-    const totalImages = existingImages.length + newImageFiles.length;
-    if (totalImages > FILE_CONSTRAINTS.MAX_IMAGES) {
-      toast({
-        title: "Too many images",
-        description: VALIDATION_MESSAGES.TOO_MANY_IMAGES,
-        variant: "destructive",
-      });
-      return;
+  const totalImages = existingImages.length + newImageFiles.length;
+  if (totalImages > FILE_CONSTRAINTS.MAX_IMAGES) {
+    toast({
+      title: "Too many images",
+      description: VALIDATION_MESSAGES.TOO_MANY_IMAGES,
+      variant: "destructive",
+    });
+    return;
+  }
+
+  try {
+    // Validate form data
+    const validated = reportSchema.parse({
+      title: formData.title,
+      description: formData.description,
+      type: report.type,
+    });
+
+    console.log('Updating report with:', {
+      title: validated.title,
+      description: validated.description,
+      location: formData.location,
+      existingImagesCount: existingImages.length,
+      newImagesCount: newImageFiles.length,
+      newImageNames: newImageFiles.map(f => f.name)
+    });
+
+    // Create FormData for file upload
+    const formDataToSend = new FormData();
+    formDataToSend.append('title', validated.title);
+    formDataToSend.append('description', validated.description);
+    
+    if (formData.location) {
+      formDataToSend.append('location', JSON.stringify(formData.location));
     }
 
-    try {
-      // Validate form data
-      const validated = reportSchema.parse({
-        title: formData.title,
-        description: formData.description,
-        type: report.type,
-      });
-
-      console.log('Updating report with:', {
-        title: validated.title,
-        description: validated.description,
-        location: formData.location,
-        existingImagesCount: existingImages.length,
-        newImagesCount: newImageFiles.length,
-        newImageNames: newImageFiles.map(f => f.name)
-      });
-
-      // Create FormData for file upload
-      const formDataToSend = new FormData();
-      formDataToSend.append('title', validated.title);
-      formDataToSend.append('description', validated.description);
-      
-      if (formData.location) {
-        formDataToSend.append('location', JSON.stringify(formData.location));
-      }
-
-      // Append new image files
-      newImageFiles.forEach((file) => {
-        formDataToSend.append('images', file);
-      });
-
-      console.log('FormData entries for update:');
-      for (let [key, value] of formDataToSend.entries()) {
-        console.log(key, value);
-      }
-
-      // Send the update with FormData
-      const updatedReport = await updateReportService(id, formDataToSend);
-
-      if (updatedReport) {
-        toast({
-          title: "Report updated",
-          description: "Your changes have been saved successfully",
-        });
-        navigate('/dashboard');
-      }
-    } catch (error: unknown) {
-      console.error('Error updating report:', error);
-      let message = "Please check your input and try again";
-      if (error instanceof Error) {
-        message = error.message;
-      }
-      toast({
-        title: "Update failed",
-        description: message,
-        variant: "destructive",
-      });
+    // Append existing images that should be kept
+    if (existingImages.length > 0) {
+      formDataToSend.append('existingImages', JSON.stringify(existingImages));
     }
-  };
+
+    // Append new image files
+    newImageFiles.forEach((file) => {
+      formDataToSend.append('images', file);
+    });
+
+    // DEBUG: Check what we're sending
+    console.log('=== FRONTEND DEBUG ===');
+    console.log('FormData entries:');
+    for (let [key, value] of formDataToSend.entries()) {
+      console.log(key, value instanceof File ? `File: ${value.name}` : value);
+    }
+    console.log('Is FormData?', formDataToSend instanceof FormData);
+    console.log('=== END DEBUG ===');
+
+    // Send the update with FormData
+    const updatedReport = await updateReportService(id, formDataToSend);
+
+    if (updatedReport) {
+      toast({
+        title: "Report updated",
+        description: "Your changes have been saved successfully",
+      });
+      navigate('/dashboard');
+    }
+  } catch (error: unknown) {
+    console.error('Error updating report:', error);
+    let message = "Please check your input and try again";
+    if (error instanceof Error) {
+      message = error.message;
+    }
+    toast({
+      title: "Update failed",
+      description: message,
+      variant: "destructive",
+    });
+  }
+};
 
   if (authLoading || loading) {
     return <LoadingSpinner fullScreen text="Loading report..." />;

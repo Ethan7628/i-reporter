@@ -1,31 +1,65 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken } from '../utils/jwt';
+import jwt from 'jsonwebtoken';
 
-export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
+interface AuthRequest extends Request {
+  user?: {
+    userId: string;
+    role: string;
+  };
+}
+
+export const authenticate = (req: AuthRequest, res: Response, next: NextFunction): void => {
   try {
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
-        error: 'Authorization token required'
+        error: 'Access token required'
       });
+      return;
     }
 
-    const token = authHeader.substring(7);
+    const token = authHeader.split(' ')[1];
     
-    try {
-      const decoded = verifyToken(token);
-      (req as any).user = decoded;
-      next();
-    } catch (error) {
-      return res.status(401).json({
+    if (!token) {
+      res.status(401).json({
         success: false,
-        error: 'Invalid or expired token'
+        error: 'Invalid token format'
       });
+      return;
     }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as {
+      userId: string;
+      role: string;
+    };
+
+    req.user = {
+      userId: decoded.userId,
+      role: decoded.role
+    };
+
+    next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
+    console.error('Authentication error:', error);
+    
+    if (error instanceof jwt.JsonWebTokenError) {
+      res.status(401).json({
+        success: false,
+        error: 'Invalid token'
+      });
+      return;
+    }
+    
+    if (error instanceof jwt.TokenExpiredError) {
+      res.status(401).json({
+        success: false,
+        error: 'Token expired'
+      });
+      return;
+    }
+
     res.status(500).json({
       success: false,
       error: 'Authentication failed'
@@ -33,23 +67,17 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
   }
 };
 
-export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const user = (req as any).user;
-    
-    if (!user || user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        error: 'Admin access required'
-      });
-    }
-    
-    next();
-  } catch (error) {
-    console.error('Admin middleware error:', error);
-    res.status(500).json({
+// Alias for authenticateToken to maintain compatibility
+export const authenticateToken = authenticate;
+
+// Optional: Admin-only middleware
+export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
+  if (!req.user || req.user.role !== 'admin') {
+    res.status(403).json({
       success: false,
-      error: 'Authorization failed'
+      error: 'Admin access required'
     });
+    return;
   }
+  next();
 };
