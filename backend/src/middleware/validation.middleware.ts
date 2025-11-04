@@ -62,5 +62,20 @@ const validate = (schema: z.ZodSchema<any>) => {
 // Export validation middlewares
 export const validateSignup = validate(signupSchema);
 export const validateLogin = validate(loginSchema);
-export const validateReport = validate(reportSchema);
+export const validateReport = (req: Request, res: Response, next: NextFunction) => {
+  const contentType = req.headers['content-type'] || '';
+  if (contentType.includes('multipart/form-data')) {
+    // Coerce known JSON fields from strings when coming from FormData
+    if (typeof (req.body as any).location === 'string') {
+      try { (req.body as any).location = JSON.parse((req.body as any).location); } catch {}
+    }
+    if (typeof (req.body as any).images === 'string') {
+      try { (req.body as any).images = JSON.parse((req.body as any).images); } catch {}
+    }
+    if (typeof (req.body as any).existingImages === 'string') {
+      try { (req.body as any).existingImages = JSON.parse((req.body as any).existingImages); } catch {}
+    }
+  }
+  return validate(reportSchema)(req, res, next);
+};
 export const validateStatusUpdate = validate(statusUpdateSchema);

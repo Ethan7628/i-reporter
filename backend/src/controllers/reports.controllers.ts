@@ -407,17 +407,26 @@ export const updateReport = async (req: Request, res: Response): Promise<void> =
     let title = report.title;
     let description = report.description;
     let location = report.location;
-    
-    // Parse existing images from DB (it's stored as JSON string)
+
+    // Determine images to keep from client (if provided), else start with DB images
     let existingImages: string[] = parseImages(report.images);
+    if (req.body.existingImages !== undefined) {
+      try {
+        existingImages = Array.isArray(req.body.existingImages)
+          ? (req.body.existingImages as unknown as string[])
+          : parseImages(req.body.existingImages);
+      } catch (e) {
+        console.error('Error parsing existingImages:', e);
+      }
+    }
 
     // If we have form data (multipart), get fields from body
     if (req.body.title !== undefined) title = req.body.title;
     if (req.body.description !== undefined) description = req.body.description;
     if (req.body.location !== undefined) {
       try {
-        location = typeof req.body.location === 'string' 
-          ? JSON.parse(req.body.location) 
+        location = typeof req.body.location === 'string'
+          ? JSON.parse(req.body.location)
           : req.body.location;
       } catch (e) {
         console.error('Error parsing location:', e);

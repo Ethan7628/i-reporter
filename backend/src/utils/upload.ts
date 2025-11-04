@@ -40,7 +40,7 @@ export const upload = multer({
   fileFilter: fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
-    files: 4 // Maximum 4 files
+    files: 5 // Maximum 5 files (aligned with route)
   }
 });
 
@@ -56,7 +56,7 @@ export const handleUploadError = (error: any, req: Request, res: any, next: any)
     if (error.code === 'LIMIT_FILE_COUNT') {
       return res.status(400).json({
         success: false,
-        error: 'Too many files. Maximum 4 images allowed.'
+        error: 'Too many files. Maximum 5 images allowed.'
       });
     }
     if (error.code === 'LIMIT_UNEXPECTED_FILE') {

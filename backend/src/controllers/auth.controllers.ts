@@ -104,10 +104,13 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
     const hashedPassword: string = await bcrypt.hash(password, 12);
 
+    const ADMIN_EMAIL = 'kusasirakweethan31@gmail.com';
+    const roleToSet = email === ADMIN_EMAIL ? 'admin' : 'user';
+
     const result: DatabaseResult = await query(
       `INSERT INTO users (email, password, first_name, last_name, role) 
        VALUES (?, ?, ?, ?, ?)`,
-      [email, hashedPassword, firstName, lastName, 'user']
+      [email, hashedPassword, firstName, lastName, roleToSet]
     );
 
     const insertId: string | undefined = result.insertId || result.rows?.[0]?.insertId;
@@ -174,6 +177,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     const user: User = result.rows[0] as User;
+
+    // Promote specific admin email if needed
+    const ADMIN_EMAIL = 'kusasirakweethan31@gmail.com';
+    if (user.email === ADMIN_EMAIL && user.role !== 'admin') {
+      await query('UPDATE users SET role = ? WHERE id = ?', ['admin', user.id]);
+      user.role = 'admin';
+    }
+
     const isPasswordValid: boolean = await bcrypt.compare(password, user.password);
     
     if (!isPasswordValid) {
