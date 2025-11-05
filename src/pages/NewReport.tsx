@@ -22,6 +22,7 @@ const NewReport = () => {
     location: null as { lat: number; lng: number } | null,
   });
   const [images, setImages] = useState<string[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [showMap, setShowMap] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -45,6 +46,17 @@ const NewReport = () => {
         return;
       }
 
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload only image files",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setImageFiles((prev) => [...prev, file]);
+
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64 = reader.result as string;
@@ -60,12 +72,13 @@ const NewReport = () => {
 
   const removeImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (images.length > FILE_CONSTRAINTS.MAX_IMAGES) {
+    if (imageFiles.length > FILE_CONSTRAINTS.MAX_IMAGES) {
       toast({
         title: "Too many images",
         description: VALIDATION_MESSAGES.TOO_MANY_IMAGES,
@@ -91,13 +104,16 @@ const NewReport = () => {
         type: formData.type,
       });
 
-      const report = await createReport({
-        title: validated.title,
-        description: validated.description,
-        type: validated.type,
-        location: formData.location,
-        images,
-      });
+      const fd = new FormData();
+      fd.append('title', validated.title);
+      fd.append('description', validated.description);
+      fd.append('type', validated.type);
+      if (formData.location) {
+        fd.append('location', JSON.stringify(formData.location));
+      }
+      imageFiles.forEach((file) => fd.append('images', file));
+
+      const report = await createReport(fd);
 
       if (report) {
         navigate('/dashboard');
