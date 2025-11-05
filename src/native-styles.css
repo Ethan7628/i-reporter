@@ -1610,8 +1610,6 @@ textarea,
     display: none;
   }
 }
-<<<<<<< HEAD
-=======
 
 /* Form field helpers (used by Auth forms) */
 .form-field {
@@ -1645,4 +1643,4 @@ textarea,
   box-shadow: var(--shadow-focus);
   border-color: var(--color-primary);
 }
->>>>>>> ivan
+
