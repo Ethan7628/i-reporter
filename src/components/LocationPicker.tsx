@@ -66,7 +66,7 @@ function SearchControl({ onLocationChange }: { onLocationChange: (location: { la
   };
 
   return (
-    <div className="leaflet-top leaflet-left" style={{ padding: 8 }}>
+    <div className="leaflet-top leaflet-left" style={{ padding: 8, zIndex: 1000 }}>
       <div style={{ background: 'white', borderRadius: 8, padding: 8, boxShadow: '0 2px 6px rgba(0,0,0,0.15)', minWidth: 260 }}>
         <input
           type="text"

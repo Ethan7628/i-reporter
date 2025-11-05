@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { query } from '../utils/database.js';
 import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
+import path from 'path';
 
 // Types
 interface Report {
@@ -162,6 +164,46 @@ const debugFileUpload = (req: Request): void => {
   console.log('=== END DEBUG ===');
 };
 
+// Save base64 images (data URLs or raw base64) to uploads directory and return public paths
+const saveBase64Images = (images: string[]): string[] => {
+  const savedPaths: string[] = [];
+  const uploadsDir = path.join(process.cwd(), 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+
+  const extFromMime: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/webp': 'webp',
+  };
+
+  images.forEach((img) => {
+    try {
+      let base64 = img;
+      let ext = 'png';
+
+      const match = img.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+      if (match) {
+        const mime = match[1];
+        base64 = match[2];
+        ext = extFromMime[mime] || 'png';
+      }
+
+      const filename = `img_${Date.now()}_${Math.round(Math.random() * 1e9)}.${ext}`;
+      const filePath = path.join(uploadsDir, filename);
+      fs.writeFileSync(filePath, Buffer.from(base64, 'base64'));
+      savedPaths.push(`/uploads/${filename}`);
+    } catch (e) {
+      console.error('Failed to save base64 image:', e);
+    }
+  });
+
+  return savedPaths;
+};
+
 // Controller functions
 export const createReport = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -194,13 +236,22 @@ export const createReport = async (req: Request, res: Response): Promise<void> =
 
     const locationValue: string = location ? JSON.stringify(location) : 'null';
     
-    // Handle uploaded images
+    // Handle uploaded images (multer) or base64 in JSON body
     let imagePaths: string[] = [];
-    if (req.files && Array.isArray(req.files)) {
+    if (req.files && Array.isArray(req.files) && (req.files as Express.Multer.File[]).length > 0) {
       imagePaths = getImagePaths(req.files as Express.Multer.File[]);
       console.log('Image paths to save to DB:', imagePaths);
     } else {
-      console.log('No images found in request');
+      // Fallback: accept base64 images sent in JSON body
+      const rawImages = (req.body as any).images;
+      const parsed = parseImages(rawImages);
+      const base64s = parsed.filter((s: any) => typeof s === 'string') as string[];
+      if (base64s.length) {
+        imagePaths = saveBase64Images(base64s);
+        console.log('Saved base64 images to disk. Paths:', imagePaths);
+      } else {
+        console.log('No images found in request');
+      }
     }
 
     // Insert the report with generated UUID and image paths
@@ -439,6 +490,13 @@ export const updateReport = async (req: Request, res: Response): Promise<void> =
       const newImagePaths = getImagePaths(req.files as Express.Multer.File[]);
       existingImages = [...existingImages, ...newImagePaths];
       console.log('Added new images. Total images:', existingImages);
+    } else if ((req.body as any)?.images) {
+      const parsed = parseImages((req.body as any).images);
+      const newPaths = saveBase64Images(parsed as string[]);
+      if (newPaths.length) {
+        existingImages = [...existingImages, ...newPaths];
+        console.log('Added base64 images. Total images:', existingImages);
+      }
     }
 
     // Prepare values for database
