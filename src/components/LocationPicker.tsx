@@ -66,20 +66,68 @@ function SearchControl({ onLocationChange }: { onLocationChange: (location: { la
   };
 
   return (
-    <div className="leaflet-top leaflet-left" style={{ padding: 8, zIndex: 1000 }}>
-      <div style={{ background: 'white', borderRadius: 8, padding: 8, boxShadow: '0 2px 6px rgba(0,0,0,0.15)', minWidth: 260 }}>
+    <div 
+      className="leaflet-top leaflet-left" 
+      style={{ 
+        position: 'absolute',
+        top: '10px',
+        left: '10px',
+        zIndex: 1000,
+        pointerEvents: 'auto'
+      }}
+    >
+      <div style={{ 
+        background: 'white', 
+        borderRadius: 8, 
+        padding: 12, 
+        boxShadow: '0 2px 10px rgba(0,0,0,0.2)', 
+        minWidth: 280,
+        maxWidth: 400
+      }}>
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search location..."
-          style={{ width: '100%', outline: 'none', border: '1px solid #ddd', borderRadius: 6, padding: '6px 8px' }}
+          placeholder="🔍 Search for a location..."
+          style={{ 
+            width: '100%', 
+            outline: 'none', 
+            border: '2px solid #4A90E2', 
+            borderRadius: 6, 
+            padding: '8px 12px',
+            fontSize: '14px',
+            fontFamily: 'inherit'
+          }}
         />
+        {loading && (
+          <div style={{ padding: '8px', fontSize: '14px', color: '#666' }}>
+            Searching...
+          </div>
+        )}
         {results.length > 0 && (
-          <ul style={{ marginTop: 8, maxHeight: 180, overflowY: 'auto' }}>
+          <ul style={{ 
+            marginTop: 8, 
+            maxHeight: 200, 
+            overflowY: 'auto',
+            listStyle: 'none',
+            margin: 0,
+            padding: 0
+          }}>
             {results.map((r, idx) => (
-              <li key={idx} style={{ padding: '6px 4px', cursor: 'pointer', borderTop: '1px solid #eee' }} onClick={() => handleSelect(r)}>
-                {r.display_name}
+              <li 
+                key={idx} 
+                style={{ 
+                  padding: '8px 6px', 
+                  cursor: 'pointer', 
+                  borderTop: idx === 0 ? 'none' : '1px solid #eee',
+                  fontSize: '13px',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#f0f0f0'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                onClick={() => handleSelect(r)}
+              >
+                📍 {r.display_name}
               </li>
             ))}
           </ul>

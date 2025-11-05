@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useReports } from "@/hooks/useReports";
+import { getImageUrl } from "@/utils/image.utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -193,7 +194,11 @@ const Admin = () => {
                         <div className="report-images-grid">
                           {report.images.map((image, idx) => (
                             <div key={idx} className="report-image-thumbnail">
-                              <img src={image} alt={`Report evidence ${idx + 1}`} />
+                              <img 
+                                src={getImageUrl(image)} 
+                                alt={`Report evidence ${idx + 1}`}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
                             </div>
                           ))}
                         </div>

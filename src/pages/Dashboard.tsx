@@ -2,10 +2,11 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useReports } from "@/hooks/useReports";
+import { getImageUrl } from "@/utils/image.utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Plus, LogOut, AlertTriangle, FileCheck, MapPin, Edit, Trash2 } from "lucide-react";
+import { Shield, Plus, LogOut, AlertTriangle, FileCheck, MapPin, Edit, Trash2, ImageIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { STATUS_COLORS } from "@/utils/constants";
@@ -177,6 +178,19 @@ const Dashboard = () => {
                   <div className="report-details">
                     {report.location && (
                       <div className="report-location"><MapPin className="h-4 w-4" /><span>{report.location.lat.toFixed(4)}, {report.location.lng.toFixed(4)}</span></div>
+                    )}
+                    {report.images && report.images.length > 0 && (
+                      <div className="report-images-grid" style={{ marginTop: '12px' }}>
+                        {report.images.map((image, idx) => (
+                          <div key={idx} style={{ aspectRatio: '1', borderRadius: '8px', overflow: 'hidden', border: '2px solid #e5e7eb' }}>
+                            <img 
+                              src={getImageUrl(image)} 
+                              alt={`Evidence ${idx + 1}`}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          </div>
+                        ))}
+                      </div>
                     )}
                     <span className="report-created">Created: {new Date(report.createdAt).toLocaleDateString()}</span>
                   </div>

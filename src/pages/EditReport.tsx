@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useReports } from "@/hooks/useReports";
 import { useToast } from "@/hooks/use-toast";
+import { getImageUrl } from "@/utils/image.utils";
 import { reportSchema, Report } from "@/types";
 import { FILE_CONSTRAINTS, VALIDATION_MESSAGES } from "@/utils/constants";
 import { Shield, ArrowLeft, MapPin, Upload, X } from "lucide-react";
@@ -391,7 +392,7 @@ const EditReport = () => {
                     <div className="image-grid">
                       {existingImages.map((img, index) => (
                         <div key={`existing-${index}`} className="image-preview">
-                          <img src={img} alt={`Existing ${index + 1}`} />
+                          <img src={getImageUrl(img)} alt={`Existing ${index + 1}`} />
                           <button
                             type="button"
                             className="image-remove-btn"
