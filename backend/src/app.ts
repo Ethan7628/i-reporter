@@ -25,7 +25,10 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 // Middleware - INCREASED PAYLOAD SIZE LIMIT
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false
+}));
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   credentials: true
