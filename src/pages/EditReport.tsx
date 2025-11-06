@@ -402,14 +402,14 @@ const EditReport = () => {
                               <img src={getMediaUrl(media)} alt={`Existing ${index + 1}`} />
                             )}
                             {mediaType === 'video' && (
-                              <video controls>
+                              <video controls autoPlay>
                                 <source src={getMediaUrl(media)} type="video/mp4" />
                                 Your browser does not support the video tag.
                               </video>
                             )}
                             {mediaType === 'audio' && (
                               <div className="audio-preview">
-                                <audio controls>
+                                <audio controls autoPlay>
                                   <source src={getMediaUrl(media)} type="audio/mpeg" />
                                   Your browser does not support the audio tag.
                                 </audio>
