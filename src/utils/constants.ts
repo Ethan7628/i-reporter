@@ -22,11 +22,12 @@ export const STATUS_LABELS: Record<ReportStatus, string> = {
 };
 
 export const FILE_CONSTRAINTS = {
-  MAX_IMAGE_SIZE: 5 * 1024 * 1024, // 5MB
-  MAX_VIDEO_SIZE: 50 * 1024 * 1024, // 50MB
-  MAX_IMAGES: 4,
+  MAX_FILE_SIZE: 50 * 1024 * 1024, // 50MB for all files
+  MAX_MEDIA_FILES: 4, // Updated name
+  MAX_IMAGES: 4, // Keep for backward compatibility
   ACCEPTED_IMAGE_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
   ACCEPTED_VIDEO_TYPES: ['video/mp4', 'video/webm', 'video/ogg'],
+  ACCEPTED_AUDIO_TYPES: ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4'],
 };
 
 export const VALIDATION_MESSAGES = {
@@ -34,8 +35,9 @@ export const VALIDATION_MESSAGES = {
   TITLE_MAX: 'Title must be less than 200 characters',
   DESCRIPTION_MIN: 'Description must be at least 20 characters',
   DESCRIPTION_MAX: 'Description must be less than 2000 characters',
-  IMAGE_TOO_LARGE: 'Images must be less than 5MB',
+  FILE_TOO_LARGE: 'Files must be less than 50MB', // Updated message
   TOO_MANY_IMAGES: 'Maximum 4 images allowed',
   CANNOT_EDIT: 'Cannot edit reports that are under investigation, rejected, or resolved',
   CANNOT_DELETE: 'Cannot delete reports that are under investigation, rejected, or resolved',
+  TOO_MANY_MEDIA_FILES: 'Maximum 4 media files allowed', 
 };

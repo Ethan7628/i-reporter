@@ -3,7 +3,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useReports } from "@/hooks/useReports";
 import { useToast } from "@/hooks/use-toast";
-import { getImageUrl } from "@/utils/image.utils";
+import { getMediaUrl, getMediaType } from "@/utils/image.utils"; // Updated import
 import { reportSchema, Report } from "@/types";
 import { FILE_CONSTRAINTS, VALIDATION_MESSAGES } from "@/utils/constants";
 import { Shield, ArrowLeft, MapPin, Upload, X } from "lucide-react";
@@ -23,9 +23,9 @@ const EditReport = () => {
     description: '',
     location: null as { lat: number; lng: number } | null,
   });
-  const [existingImages, setExistingImages] = useState<string[]>([]);
-  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
-  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
+  const [existingMedia, setExistingMedia] = useState<string[]>([]);
+  const [newMediaFiles, setNewMediaFiles] = useState<File[]>([]);
+  const [newMediaPreviews, setNewMediaPreviews] = useState<string[]>([]);
   const [showMap, setShowMap] = useState(false);
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,7 +34,7 @@ const EditReport = () => {
 
   useEffect(() => {
     if (authLoading) return;
-    
+
     if (!requireAuth() || !id) {
       navigate('/dashboard');
       return;
@@ -45,7 +45,7 @@ const EditReport = () => {
         setLoading(true);
         setError(null);
         const fetchedReport = await getReport(id);
-        
+
         if (!fetchedReport) {
           toast({
             title: "Report not found",
@@ -82,15 +82,15 @@ const EditReport = () => {
           description: fetchedReport.description,
           location: fetchedReport.location,
         });
-        setExistingImages(fetchedReport.images || []);
+        setExistingMedia(fetchedReport.images || []);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to load report';
         setError(message);
-        
+
         if (import.meta.env.DEV) {
           console.error('[EditReport] Load report error:', err);
         }
-        
+
         toast({
           title: "Error loading report",
           description: message,
@@ -112,32 +112,36 @@ const EditReport = () => {
     const newPreviews: string[] = [];
 
     Array.from(files).forEach((file) => {
-      // Check if we've reached the maximum number of images
-      const totalImages = existingImages.length + newImageFiles.length + newFiles.length;
-      if (totalImages >= FILE_CONSTRAINTS.MAX_IMAGES) {
+      // Check if we've reached the maximum number of media files
+      const totalMedia = existingMedia.length + newMediaFiles.length + newFiles.length;
+      if (totalMedia >= FILE_CONSTRAINTS.MAX_MEDIA_FILES) {
         toast({
-          title: "Maximum images reached",
-          description: VALIDATION_MESSAGES.TOO_MANY_IMAGES,
+          title: "Maximum media upload reached",
+          description: VALIDATION_MESSAGES.TOO_MANY_MEDIA_FILES, // Updated message
           variant: "destructive",
         });
         return;
       }
 
       // Check file size
-      if (file.size > FILE_CONSTRAINTS.MAX_IMAGE_SIZE) {
+      if (file.size > FILE_CONSTRAINTS.MAX_FILE_SIZE) {
         toast({
           title: "File too large",
-          description: VALIDATION_MESSAGES.IMAGE_TOO_LARGE,
+          description: VALIDATION_MESSAGES.FILE_TOO_LARGE,
           variant: "destructive",
         });
         return;
       }
 
       // Check file type
-      if (!file.type.startsWith('image/')) {
+      if (!(
+        file.type.startsWith('image/') ||
+        file.type.startsWith("video/") ||
+        file.type.startsWith("audio/")
+      )) {
         toast({
           title: "Invalid file type",
-          description: "Please upload only image files",
+          description: "Please upload only images, videos and audio files",
           variant: "destructive",
         });
         return;
@@ -150,16 +154,16 @@ const EditReport = () => {
       reader.onloadend = () => {
         const base64 = reader.result as string;
         newPreviews.push(base64);
-        
+
         // Update previews when all files are processed
         if (newPreviews.length === newFiles.length) {
-          setNewImagePreviews(prev => [...prev, ...newPreviews]);
+          setNewMediaPreviews(prev => [...prev, ...newPreviews]);
         }
       };
       reader.readAsDataURL(file);
     });
 
-    setNewImageFiles(prev => [...prev, ...newFiles]);
+    setNewMediaFiles(prev => [...prev, ...newFiles]);
 
     // Reset file input
     if (fileInputRef.current) {
@@ -167,98 +171,104 @@ const EditReport = () => {
     }
   };
 
-  const removeExistingImage = (index: number) => {
-    setExistingImages(prev => prev.filter((_, i) => i !== index));
+  const removeExistingMedia = (index: number) => {
+    setExistingMedia(prev => prev.filter((_, i) => i !== index));
   };
 
-  const removeNewImage = (index: number) => {
-    setNewImageFiles(prev => prev.filter((_, i) => i !== index));
-    setNewImagePreviews(prev => prev.filter((_, i) => i !== index));
+  const removeNewMedia = (index: number) => {
+    setNewMediaFiles(prev => prev.filter((_, i) => i !== index));
+    setNewMediaPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!id || !report) return;
+    if (!id || !report) return;
 
-  const totalImages = existingImages.length + newImageFiles.length;
-  if (totalImages > FILE_CONSTRAINTS.MAX_IMAGES) {
-    toast({
-      title: "Too many images",
-      description: VALIDATION_MESSAGES.TOO_MANY_IMAGES,
-      variant: "destructive",
-    });
-    return;
-  }
-
-  try {
-    // Validate form data
-    const validated = reportSchema.parse({
-      title: formData.title,
-      description: formData.description,
-      type: report.type,
-    });
-
-    console.log('Updating report with:', {
-      title: validated.title,
-      description: validated.description,
-      location: formData.location,
-      existingImagesCount: existingImages.length,
-      newImagesCount: newImageFiles.length,
-      newImageNames: newImageFiles.map(f => f.name)
-    });
-
-    // Create FormData for file upload
-    const formDataToSend = new FormData();
-    formDataToSend.append('title', validated.title);
-    formDataToSend.append('description', validated.description);
-    
-    if (formData.location) {
-      formDataToSend.append('location', JSON.stringify(formData.location));
-    }
-
-    // Append existing images that should be kept
-    if (existingImages.length > 0) {
-      formDataToSend.append('existingImages', JSON.stringify(existingImages));
-    }
-
-    // Append new image files
-    newImageFiles.forEach((file) => {
-      formDataToSend.append('images', file);
-    });
-
-    // DEBUG: Check what we're sending
-    console.log('=== FRONTEND DEBUG ===');
-    console.log('FormData entries:');
-    for (let [key, value] of formDataToSend.entries()) {
-      console.log(key, value instanceof File ? `File: ${value.name}` : value);
-    }
-    console.log('Is FormData?', formDataToSend instanceof FormData);
-    console.log('=== END DEBUG ===');
-
-    // Send the update with FormData
-    const updatedReport = await updateReportService(id, formDataToSend);
-
-    if (updatedReport) {
+    const totalMedia = existingMedia.length + newMediaFiles.length;
+    if (totalMedia > FILE_CONSTRAINTS.MAX_MEDIA_FILES) {
       toast({
-        title: "Report updated",
-        description: "Your changes have been saved successfully",
+        title: "Too many media files",
+        description: VALIDATION_MESSAGES.TOO_MANY_MEDIA_FILES, // Updated message
+        variant: "destructive",
       });
-      navigate('/dashboard');
+      return;
     }
-  } catch (error: unknown) {
-    console.error('Error updating report:', error);
-    let message = "Please check your input and try again";
-    if (error instanceof Error) {
-      message = error.message;
+
+    try {
+      // Validate form data
+      const validated = reportSchema.parse({
+        title: formData.title,
+        description: formData.description,
+        type: report.type,
+      });
+
+      console.log('Updating report with:', {
+        title: validated.title,
+        description: validated.description,
+        location: formData.location,
+        existingMediaCount: existingMedia.length,
+        newMediaCount: newMediaFiles.length,
+        newMediaNames: newMediaFiles.map(f => f.name)
+      });
+
+      // Create FormData for file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append('title', validated.title);
+      formDataToSend.append('description', validated.description);
+
+      if (formData.location) {
+        formDataToSend.append('location', JSON.stringify(formData.location));
+      }
+
+      // Append existing media that should be kept
+      if (existingMedia.length > 0) {
+        formDataToSend.append('existingMedia', JSON.stringify(existingMedia));
+      }
+
+      // Append new media files with proper field names
+      newMediaFiles.forEach((file) => {
+        if (file.type.startsWith('image/')) {
+          formDataToSend.append('images', file);
+        } else if (file.type.startsWith('video/')) {
+          formDataToSend.append('videos', file);
+        } else if (file.type.startsWith('audio/')) {
+          formDataToSend.append('audios', file);
+        }
+      });
+
+      // DEBUG: Check what we're sending
+      console.log('=== FRONTEND DEBUG ===');
+      console.log('FormData entries:');
+      for (const [key, value] of formDataToSend.entries()) {
+        console.log(key, value instanceof File ? `File: ${value.name}` : value);
+      }
+      console.log('Is FormData?', formDataToSend instanceof FormData);
+      console.log('=== END DEBUG ===');
+
+      // Send the update with FormData
+      const updatedReport = await updateReportService(id, formDataToSend);
+
+      if (updatedReport) {
+        toast({
+          title: "Report updated",
+          description: "Your changes have been saved successfully",
+        });
+        navigate('/dashboard');
+      }
+    } catch (error: unknown) {
+      console.error('Error updating report:', error);
+      let message = "Please check your input and try again";
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      toast({
+        title: "Update failed",
+        description: message,
+        variant: "destructive",
+      });
     }
-    toast({
-      title: "Update failed",
-      description: message,
-      variant: "destructive",
-    });
-  }
-};
+  };
 
   if (authLoading || loading) {
     return <LoadingSpinner fullScreen text="Loading report..." />;
@@ -292,7 +302,7 @@ const EditReport = () => {
 
   if (!user || !report) return null;
 
-  const totalImages = existingImages.length + newImageFiles.length;
+  const totalMedia = existingMedia.length + newMediaFiles.length;
 
   return (
     <ErrorBoundary>
@@ -376,46 +386,66 @@ const EditReport = () => {
                 )}
               </div>
 
-              {/* Image Upload */}
+              {/* Media Upload */}
               <div className="form-section">
                 <label className="form-label">
-                  Images (Optional, max {FILE_CONSTRAINTS.MAX_IMAGES})
+                  Media (Optional, max {FILE_CONSTRAINTS.MAX_MEDIA_FILES}, audios, videos and images)
                   <span className="form-hint">
-                    {totalImages}/{FILE_CONSTRAINTS.MAX_IMAGES} images selected
+                    {totalMedia}/{FILE_CONSTRAINTS.MAX_MEDIA_FILES} Media selected
                   </span>
                 </label>
-                
-                {/* Existing Images */}
-                {existingImages.length > 0 && (
-                  <div className="existing-images-section">
-                    <p className="form-hint">Existing images:</p>
-                    <div className="image-grid">
-                      {existingImages.map((img, index) => (
-                        <div key={`existing-${index}`} className="image-preview">
-                          <img src={getImageUrl(img)} alt={`Existing ${index + 1}`} />
-                          <button
-                            type="button"
-                            className="image-remove-btn"
-                            onClick={() => removeExistingImage(index)}
-                            aria-label="Remove existing image"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                          <div className="image-info">
-                            Existing image
+
+                {/* Existing Media */}
+                {existingMedia.length > 0 && (
+                  <div className="existing-media-section">
+                    <p className="form-hint">Existing Media:</p>
+                    <div className="media-grid">
+                      {existingMedia.map((media, index) => {
+                        const mediaType = getMediaType(media);
+                        return (
+                          <div key={`existing-${index}`} className="media-preview">
+                            {mediaType === 'image' && (
+                              <img src={getMediaUrl(media)} alt={`Existing ${index + 1}`} />
+                            )}
+                            {mediaType === 'video' && (
+                              <video controls>
+                                <source src={getMediaUrl(media)} type="video/mp4" />
+                                Your browser does not support the video tag.
+                              </video>
+                            )}
+                            {mediaType === 'audio' && (
+                              <div className="audio-preview">
+                                <audio controls>
+                                  <source src={getMediaUrl(media)} type="audio/mpeg" />
+                                  Your browser does not support the audio tag.
+                                </audio>
+                                <span>Audio File</span>
+                              </div>
+                            )}
+                            <button
+                              type="button"
+                              className="media-remove-btn"
+                              onClick={() => removeExistingMedia(index)}
+                              aria-label="Remove existing media"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                            <div className="media-info">
+                              Existing {mediaType.charAt(0).toUpperCase() + mediaType.slice(1)}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
 
-                {/* New Image Upload */}
-                <div className="image-upload-container">
+                {/* New Media Upload */}
+                <div className="media-upload-container">
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/*,video/*,audio/*"
                     multiple
                     onChange={handleFileChange}
                     style={{ display: 'none' }}
@@ -424,33 +454,57 @@ const EditReport = () => {
                     type="button"
                     className="btn btn-outline btn-full"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={totalImages >= FILE_CONSTRAINTS.MAX_IMAGES}
+                    disabled={totalMedia >= FILE_CONSTRAINTS.MAX_MEDIA_FILES}
                   >
                     <Upload className="h-4 w-4" style={{ marginRight: 'var(--spacing-2)' }} />
-                    {totalImages >= FILE_CONSTRAINTS.MAX_IMAGES ? 'Maximum reached' : 'Add More Images'}
+                    {totalMedia >= FILE_CONSTRAINTS.MAX_MEDIA_FILES ? 'Maximum reached' : 'Add More Media'}
                   </button>
-                  
-                  {/* New Image Previews */}
-                  {newImagePreviews.length > 0 && (
-                    <div className="new-images-section">
-                      <p className="form-hint">New images to add:</p>
-                      <div className="image-grid">
-                        {newImagePreviews.map((img, index) => (
-                          <div key={`new-${index}`} className="image-preview">
-                            <img src={img} alt={`New ${index + 1}`} />
-                            <button
-                              type="button"
-                              className="image-remove-btn"
-                              onClick={() => removeNewImage(index)}
-                              aria-label="Remove new image"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                            <div className="image-info">
-                              {newImageFiles[index]?.name}
+
+                  {/* New Media Previews */}
+                  {newMediaPreviews.length > 0 && (
+                    <div className="new-media-section">
+                      <p className="form-hint">New media to add:</p>
+                      <div className="media-grid">
+                        {newMediaPreviews.map((preview, index) => {
+                          const file = newMediaFiles[index];
+                          const isImage = file?.type?.startsWith('image/');
+                          const isVideo = file?.type?.startsWith('video/');
+                          const isAudio = file?.type?.startsWith('audio/');
+
+                          return (
+                            <div key={`new-${index}`} className="media-preview">
+                              {isImage && (
+                                <img src={preview} alt={`New ${index + 1}`} />
+                              )}
+                              {isVideo && (
+                                <video controls>
+                                  <source src={preview} type={file.type} />
+                                  Your browser does not support the video tag.
+                                </video>
+                              )}
+                              {isAudio && (
+                                <div className="audio-preview">
+                                  <audio controls>
+                                    <source src={preview} type={file.type} />
+                                    Your browser does not support the audio tag.
+                                  </audio>
+                                  <span>Audio File</span>
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                className="media-remove-btn"
+                                onClick={() => removeNewMedia(index)}
+                                aria-label="Remove new media"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                              <div className="media-info">
+                                {file?.name}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -459,9 +513,9 @@ const EditReport = () => {
 
               {/* Form Actions */}
               <div className="form-actions">
-                <button 
-                  type="submit" 
-                  className="btn btn-primary" 
+                <button
+                  type="submit"
+                  className="btn btn-primary"
                   disabled={reportLoading}
                 >
                   {reportLoading ? (

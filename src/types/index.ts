@@ -27,6 +27,16 @@ export interface AuthResponse {
   token?: string;
 }
 
+// ============= Media Types =============
+export type MediaType = 'image' | 'video' | 'audio' | 'unknown';
+
+export interface MediaFile {
+  url: string;
+  type: MediaType;
+  name?: string;
+  size?: number;
+}
+
 // ============= Report Types =============
 export type ReportType = 'red-flag' | 'intervention';
 export type ReportStatus = 'draft' | 'under-investigation' | 'rejected' | 'resolved';
@@ -44,7 +54,8 @@ export interface Report {
   description: string;
   location: ReportLocation | null;
   status: ReportStatus;
-  images: string[];
+  images: string[]; // Keeping for backward compatibility
+  media?: MediaFile[]; // New field for structured media data
   createdAt: string;
   updatedAt: string;
 }
@@ -64,11 +75,46 @@ export interface CreateReportData {
   description: string;
   type: ReportType;
   location?: ReportLocation | null;
-  images?: string[];
+  images?: string[]; // Backward compatibility
+  media?: MediaFile[]; // New media structure
 }
 
 export interface UpdateReportData extends Partial<CreateReportData> {
   status?: ReportStatus;
+  existingImages?: string[]; // For edit functionality
+  existingMedia?: string[]; // For edit functionality with media
+}
+
+// ============= File Upload Types =============
+export interface FileUploadProgress {
+  file: File;
+  progress: number;
+  uploaded: boolean;
+  error?: string;
+}
+
+export interface UploadedFile {
+  url: string;
+  type: MediaType;
+  originalName: string;
+  size: number;
+}
+
+// ============= Form Data Types =============
+export interface ReportFormData {
+  title: string;
+  description: string;
+  type: ReportType;
+  location: ReportLocation | null;
+  mediaFiles: File[];
+}
+
+export interface EditReportFormData {
+  title: string;
+  description: string;
+  location: ReportLocation | null;
+  existingMedia: string[];
+  newMediaFiles: File[];
 }
 
 // ============= API Response Types =============
@@ -84,3 +130,30 @@ export interface ApiError {
   code?: string;
   details?: unknown;
 }
+
+// ============= Media Validation =============
+export const mediaFileSchema = z.object({
+  url: z.string().url('Invalid URL'),
+  type: z.enum(['image', 'video', 'audio']),
+  name: z.string().optional(),
+  size: z.number().positive().optional(),
+});
+
+export const createReportWithMediaSchema = reportSchema.extend({
+  location: z.object({
+    lat: z.number(),
+    lng: z.number(),
+  }).nullable().optional(),
+  media: z.array(mediaFileSchema).optional(),
+});
+
+// ============= Utility Types =============
+export type ReportWithMedia = Report & {
+  media?: MediaFile[];
+};
+
+export type MediaPreview = {
+  url: string;
+  type: MediaType;
+  file?: File;
+};

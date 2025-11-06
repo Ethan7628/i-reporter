@@ -14,13 +14,13 @@ class ApiService {
     return localStorage.getItem('auth_token');
   }
 
-  private getHeaders(contentType?: string): HeadersInit {
+  private getHeaders(contentType?: string, isFormData: boolean = false): HeadersInit {
     const headers: HeadersInit = {
       ...API_CONFIG.HEADERS,
     };
 
-    // Only set Content-Type if not FormData
-    if (contentType && contentType !== 'multipart/form-data') {
+    // Don't set Content-Type for FormData - let browser set it with boundary
+    if (contentType && !isFormData) {
       headers['Content-Type'] = contentType;
     }
 
@@ -34,20 +34,36 @@ class ApiService {
 
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
     try {
-      const data = await response.json();
+      // Handle empty responses (like 204 No Content)
+      if (response.status === 204) {
+        return {
+          success: true,
+        };
+      }
+
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
 
       if (!response.ok) {
         return {
           success: false,
-          error: data.error || data.message || `Error: ${response.status}`,
+          error: data.error || data.message || `Error: ${response.status} ${response.statusText}`,
         };
       }
 
       return {
         success: true,
-        data: data.data || data,
+        data: data.data !== undefined ? data.data : data,
+        message: data.message,
       };
     } catch (error) {
+      // If JSON parsing fails but response is ok, return success
+      if (response.ok) {
+        return {
+          success: true,
+        };
+      }
+      
       return {
         success: false,
         error: 'Failed to parse response',
@@ -63,10 +79,19 @@ class ApiService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
+      const fullUrl = `${this.baseURL}${endpoint}`;
+      
+      if (import.meta.env.DEV) {
+        console.log(`[API Service] ${options.method || 'GET'} ${fullUrl}`, options.body);
+      }
+
+      const response = await fetch(fullUrl, {
         ...options,
         headers: {
-          ...this.getHeaders(options.headers?.['Content-Type'] as string),
+          ...this.getHeaders(
+            options.headers?.['Content-Type'] as string,
+            options.body instanceof FormData
+          ),
           ...options.headers,
         },
         signal: controller.signal,
@@ -74,8 +99,17 @@ class ApiService {
       });
 
       clearTimeout(timeoutId);
+      
+      if (import.meta.env.DEV) {
+        console.log(`[API Service] Response:`, response.status, response.statusText);
+      }
+      
       return this.handleResponse<T>(response);
     } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error('[API Service] Request error:', error);
+      }
+      
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
           return {
@@ -108,12 +142,14 @@ class ApiService {
       method: 'POST',
     };
 
-    if (isFormData) {
-      // For FormData, let browser set Content-Type with boundary
-      options.body = body;
-    } else if (body) {
-      options.headers = this.getHeaders('application/json');
-      options.body = JSON.stringify(body);
+    if (body) {
+      if (isFormData) {
+        // For FormData, don't set Content-Type - browser will set it with boundary
+        options.body = body;
+      } else {
+        options.headers = this.getHeaders('application/json');
+        options.body = JSON.stringify(body);
+      }
     } else {
       options.headers = this.getHeaders('application/json');
     }
@@ -127,12 +163,13 @@ class ApiService {
       method: 'PUT',
     };
 
-    if (isFormData) {
-      // For FormData, let browser set Content-Type with boundary
-      options.body = body;
-    } else if (body) {
-      options.headers = this.getHeaders('application/json');
-      options.body = JSON.stringify(body);
+    if (body) {
+      if (isFormData) {
+        options.body = body;
+      } else {
+        options.headers = this.getHeaders('application/json');
+        options.body = JSON.stringify(body);
+      }
     } else {
       options.headers = this.getHeaders('application/json');
     }
@@ -141,18 +178,38 @@ class ApiService {
   }
 
   async patch<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, {
+    const isFormData = body instanceof FormData;
+    const options: RequestInit = {
       method: 'PATCH',
-      headers: this.getHeaders('application/json'),
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    };
+
+    if (body) {
+      if (isFormData) {
+        options.body = body;
+      } else {
+        options.headers = this.getHeaders('application/json');
+        options.body = JSON.stringify(body);
+      }
+    } else {
+      options.headers = this.getHeaders('application/json');
+    }
+
+    return this.request<T>(endpoint, options);
   }
 
-  async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, { 
+  async delete<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
+    const options: RequestInit = {
       method: 'DELETE',
-      headers: this.getHeaders('application/json')
-    });
+    };
+
+    if (data) {
+      options.headers = this.getHeaders('application/json');
+      options.body = JSON.stringify(data);
+    } else {
+      options.headers = this.getHeaders('application/json');
+    }
+
+    return this.request<T>(endpoint, options);
   }
 
   async uploadFile<T>(
@@ -170,6 +227,122 @@ class ApiService {
     }
 
     return this.post<T>(endpoint, formData);
+  }
+
+  // Enhanced upload method for multiple files
+  async uploadMultipleFiles<T>(
+    endpoint: string,
+    files: File[],
+    fieldName: string = 'files',
+    additionalData?: Record<string, string>
+  ): Promise<ApiResponse<T>> {
+    const formData = new FormData();
+
+    files.forEach((file, index) => {
+      formData.append(`${fieldName}[${index}]`, file);
+    });
+
+    if (additionalData) {
+      Object.entries(additionalData).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+    }
+
+    return this.post<T>(endpoint, formData);
+  }
+
+  // Method for uploading different media types to specific fields
+  async uploadMediaFiles<T>(
+    endpoint: string,
+    files: { file: File; field: string }[],
+    additionalData?: Record<string, string>
+  ): Promise<ApiResponse<T>> {
+    const formData = new FormData();
+
+    files.forEach(({ file, field }) => {
+      formData.append(field, file);
+    });
+
+    if (additionalData) {
+      Object.entries(additionalData).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+    }
+
+    return this.post<T>(endpoint, formData);
+  }
+
+  // Progress tracking for large file uploads
+  async uploadWithProgress<T>(
+    endpoint: string,
+    file: File,
+    onProgress?: (progress: number) => void,
+    additionalData?: Record<string, string>
+  ): Promise<ApiResponse<T>> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const formData = new FormData();
+      
+      formData.append('file', file);
+
+      if (additionalData) {
+        Object.entries(additionalData).forEach(([key, value]) => {
+          formData.append(key, value);
+        });
+      }
+
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable && onProgress) {
+          const progress = (event.loaded / event.total) * 100;
+          onProgress(progress);
+        }
+      });
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const response = JSON.parse(xhr.responseText);
+            resolve({
+              success: true,
+              data: response.data || response,
+              message: response.message,
+            });
+          } catch (error) {
+            resolve({
+              success: false,
+              error: 'Failed to parse response',
+            });
+          }
+        } else {
+          try {
+            const error = JSON.parse(xhr.responseText);
+            resolve({
+              success: false,
+              error: error.error || error.message || `Error: ${xhr.status}`,
+            });
+          } catch {
+            resolve({
+              success: false,
+              error: `Error: ${xhr.status} ${xhr.statusText}`,
+            });
+          }
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        resolve({
+          success: false,
+          error: 'Network error occurred',
+        });
+      });
+
+      const token = this.getToken();
+      xhr.open('POST', `${this.baseURL}${endpoint}`);
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      }
+      xhr.send(formData);
+    });
   }
 }
 

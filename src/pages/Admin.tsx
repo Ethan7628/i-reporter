@@ -2,16 +2,16 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useReports } from "@/hooks/useReports";
-import { getImageUrl } from "@/utils/image.utils";
+import { getMediaUrl, getMediaType } from "@/utils/image.utils"; // Updated import
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, LogOut, AlertTriangle, FileCheck, MapPin, Image as ImageIcon } from "lucide-react";
+import { Shield, LogOut, AlertTriangle, FileCheck, MapPin, Image as ImageIcon, VideoIcon, RadioIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { STATUS_COLORS } from "@/utils/constants";
-import { ReportStatus } from "@/types";
+import { ReportStatus, MediaType } from "@/types";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -85,6 +85,33 @@ const Admin = () => {
     }
   };
 
+  const getMediaIcon = (mediaType: MediaType) => {
+  switch (mediaType) {
+    case 'image':
+      return <ImageIcon className="h-4 w-4" />;
+    case 'video':
+      return <VideoIcon className="h-4 w-4" />;
+    case 'audio':
+      return <RadioIcon className="h-4 w-4" />;
+    case 'unknown':
+    default:
+      return <ImageIcon className="h-4 w-4" />;
+  }
+};
+
+  const getMediaTypeLabel = (mediaType: MediaType): string => {
+    switch (mediaType) {
+      case 'image':
+        return 'image';
+      case 'video':
+        return 'video';
+      case 'audio':
+        return 'audio';
+      default:
+        return 'file';
+    }
+  };
+
   if (authLoading) {
     return <LoadingSpinner fullScreen text="Loading admin panel..." />;
   }
@@ -145,75 +172,140 @@ const Admin = () => {
           </Card>
         ) : (
           <div className="reports-list">
-            {reports.map((report) => (
-              <Card key={report.id} className="report-card">
-                <CardHeader>
-                  <div className="report-row">
-                    <div className="report-main">
-                      <div className="report-meta">
-                        {report.type === 'red-flag' ? (
-                          <AlertTriangle className="icon-destructive" />
-                        ) : (
-                          <FileCheck className="icon-secondary" />
-                        )}
-                        <Badge variant="outline" className="report-type">{report.type}</Badge>
-                        <Badge className={STATUS_COLORS[report.status]}>{report.status}</Badge>
-                      </div>
-                      <CardTitle>{report.title}</CardTitle>
-                      <CardDescription className="report-desc">{report.description.substring(0, 200)}...</CardDescription>
-                    </div>
-                    <div className="report-controls">
-                      <Select value={report.status} onValueChange={(value) => handleStatusChange(report.id, value as ReportStatus)}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="draft">Draft</SelectItem>
-                          <SelectItem value="under-investigation">Under Investigation</SelectItem>
-                          <SelectItem value="rejected">Rejected</SelectItem>
-                          <SelectItem value="resolved">Resolved</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="report-details">
-                    {report.location && (
-                      <div className="report-location">
-                        <MapPin className="h-4 w-4" />
-                        <span>Location: {report.location.lat.toFixed(4)}, {report.location.lng.toFixed(4)}</span>
-                      </div>
-                    )}
-                    {report.images.length > 0 && (
-                      <>
-                        <div className="report-images">
-                          <ImageIcon className="h-4 w-4" />
-                          <span>{report.images.length} image(s) attached</span>
+            {reports.map((report) => {
+              // Count media by type for better display
+              const mediaCounts = {
+                images: 0,
+                videos: 0,
+                audios: 0,
+              };
+
+              report.images?.forEach(media => {
+                const mediaType = getMediaType(media);
+                if (mediaType === 'image') mediaCounts.images++;
+                else if (mediaType === 'video') mediaCounts.videos++;
+                else if (mediaType === 'audio') mediaCounts.audios++;
+              });
+
+              const totalMedia = mediaCounts.images + mediaCounts.videos + mediaCounts.audios;
+
+              return (
+                <Card key={report.id} className="report-card">
+                  <CardHeader>
+                    <div className="report-row">
+                      <div className="report-main">
+                        <div className="report-meta">
+                          {report.type === 'red-flag' ? (
+                            <AlertTriangle className="icon-destructive" />
+                          ) : (
+                            <FileCheck className="icon-secondary" />
+                          )}
+                          <Badge variant="outline" className="report-type">{report.type}</Badge>
+                          <Badge className={STATUS_COLORS[report.status]}>{report.status}</Badge>
                         </div>
-                        <div className="report-images-grid">
-                          {report.images.map((image, idx) => (
-                            <div key={idx} className="report-image-thumbnail">
-                              <img 
-                                src={getImageUrl(image)} 
-                                alt={`Report evidence ${idx + 1}`}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                              />
+                        <CardTitle>{report.title}</CardTitle>
+                        <CardDescription className="report-desc">{report.description.substring(0, 200)}...</CardDescription>
+                      </div>
+                      <div className="report-controls">
+                        <Select value={report.status} onValueChange={(value) => handleStatusChange(report.id, value as ReportStatus)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="draft">Draft</SelectItem>
+                            <SelectItem value="under-investigation">Under Investigation</SelectItem>
+                            <SelectItem value="rejected">Rejected</SelectItem>
+                            <SelectItem value="resolved">Resolved</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="report-details">
+                      {report.location && (
+                        <div className="report-location">
+                          <MapPin className="h-4 w-4" />
+                          <span>Location: {report.location.lat.toFixed(4)}, {report.location.lng.toFixed(4)}</span>
+                        </div>
+                      )}
+                      {totalMedia > 0 && (
+                        <>
+                          <div className="report-media-info">
+                            <div className="media-summary">
+                              <span className="media-count">{totalMedia} media file(s) attached:</span>
+                              {mediaCounts.images > 0 && (
+                                <Badge variant="outline" className="media-type-badge">
+                                  <ImageIcon className="h-3 w-3 mr-1" />
+                                  {mediaCounts.images} image{mediaCounts.images !== 1 ? 's' : ''}
+                                </Badge>
+                              )}
+                              {mediaCounts.videos > 0 && (
+                                <Badge variant="outline" className="media-type-badge">
+                                  <VideoIcon className="h-3 w-3 mr-1" />
+                                  {mediaCounts.videos} video{mediaCounts.videos !== 1 ? 's' : ''}
+                                </Badge>
+                              )}
+                              {mediaCounts.audios > 0 && (
+                                <Badge variant="outline" className="media-type-badge">
+                                  <RadioIcon className="h-3 w-3 mr-1" />
+                                  {mediaCounts.audios} audio{mediaCounts.audios !== 1 ? 's' : ''}
+                                </Badge>
+                              )}
                             </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                    <div className="report-meta-small">
-                      <span>Created: {new Date(report.createdAt).toLocaleString()}</span>
-                      <span>Updated: {new Date(report.updatedAt).toLocaleString()}</span>
-                      <span>Report ID: {report.id.substring(0, 8)}</span>
-                      <span>User ID: {report.userId.substring(0, 8)}</span>
+                          </div>
+                          <div className="media-grid">
+                            {report.images.map((media, idx) => {
+                              const mediaType = getMediaType(media);
+                              return (
+                                <div key={idx} className="media-thumbnail">
+                                  {mediaType === 'image' && (
+                                    <img 
+                                      src={getMediaUrl(media)} 
+                                      alt={`Report evidence ${idx + 1}`}
+                                      className="media-preview"
+                                    />
+                                  )}
+                                  {mediaType === 'video' && (
+                                    <div className="video-thumbnail">
+                                      <video className="media-preview">
+                                        <source src={getMediaUrl(media)} type="video/mp4" />
+                                      </video>
+                                      <div className="media-overlay">
+                                        <VideoIcon className="h-6 w-6" />
+                                      </div>
+                                    </div>
+                                  )}
+                                  {mediaType === 'audio' && (
+                                    <div className="audio-thumbnail">
+                                      <div className="audio-icon">
+                                        <RadioIcon className="h-8 w-8" />
+                                      </div>
+                                      <div className="media-overlay">
+                                        <span>Audio</span>
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div className="media-type-indicator">
+                                    {getMediaIcon(mediaType)}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </>
+                      )}
+                      <div className="report-meta-small">
+                        <span>Created: {new Date(report.createdAt).toLocaleString()}</span>
+                        <span>Updated: {new Date(report.updatedAt).toLocaleString()}</span>
+                        <span>Report ID: {report.id.substring(0, 8)}</span>
+                        <span>User ID: {report.userId.substring(0, 8)}</span>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </main>

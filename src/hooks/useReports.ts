@@ -80,7 +80,7 @@ export const useReports = () => {
         
         if (data instanceof FormData) {
           console.log('[useReports] FormData entries:');
-          for (let [key, value] of (data as FormData).entries()) {
+          for (const [key, value] of (data as FormData).entries()) {
             console.log(key, value instanceof File ? `File: ${value.name}` : value);
           }
         }
@@ -129,7 +129,7 @@ export const useReports = () => {
         
         if (data instanceof FormData) {
           console.log('[useReports] FormData entries:');
-          for (let [key, value] of (data as FormData).entries()) {
+          for (const [key, value] of (data as FormData).entries()) {
             console.log(key, value instanceof File ? `File: ${value.name}` : value);
           }
         }

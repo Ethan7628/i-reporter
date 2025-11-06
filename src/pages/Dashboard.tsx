@@ -2,11 +2,11 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useReports } from "@/hooks/useReports";
-import { getImageUrl } from "@/utils/image.utils";
+import { getMediaUrl, getMediaType } from "@/utils/image.utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Plus, LogOut, AlertTriangle, FileCheck, MapPin, Edit, Trash2, ImageIcon } from "lucide-react";
+import { Shield, Plus, LogOut, AlertTriangle, FileCheck, MapPin, Edit, Trash2, ImageIcon, VideoIcon, RadioIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { STATUS_COLORS } from "@/utils/constants";
@@ -83,6 +83,31 @@ const Dashboard = () => {
     }
   };
 
+  const getMediaIcon = (mediaType: string) => {
+    switch (mediaType) {
+      case 'image':
+        return <ImageIcon className="h-4 w-4" />;
+      case 'video':
+        return <VideoIcon className="h-4 w-4" />;
+      case 'audio':
+        return <RadioIcon className="h-4 w-4" />;
+      default:
+        return <ImageIcon className="h-4 w-4" />;
+    }
+  };
+
+  // Helper to count media by type for better display
+  const getMediaCounts = (images: string[]) => {
+    const counts = { images: 0, videos: 0, audios: 0 };
+    images?.forEach(media => {
+      const mediaType = getMediaType(media);
+      if (mediaType === 'image') counts.images++;
+      else if (mediaType === 'video') counts.videos++;
+      else if (mediaType === 'audio') counts.audios++;
+    });
+    return counts;
+  };
+
   if (authLoading) {
     return <LoadingSpinner fullScreen text="Loading your dashboard..." />;
   }
@@ -144,59 +169,123 @@ const Dashboard = () => {
           </Card>
         ) : (
           <div className="reports-list">
-            {reports.map((report) => (
-              <Card key={report.id} className="report-card">
-                <CardHeader>
-                  <div className="report-row">
-                    <div className="report-main">
-                      <div className="report-meta">
-                        {report.type === 'red-flag' ? (
-                          <AlertTriangle className="icon-destructive" />
-                        ) : (
-                          <FileCheck className="icon-secondary" />
+            {reports.map((report) => {
+              const mediaCounts = getMediaCounts(report.images);
+              const totalMedia = mediaCounts.images + mediaCounts.videos + mediaCounts.audios;
+
+              return (
+                <Card key={report.id} className="report-card">
+                  <CardHeader>
+                    <div className="report-row">
+                      <div className="report-main">
+                        <div className="report-meta">
+                          {report.type === 'red-flag' ? (
+                            <AlertTriangle className="icon-destructive" />
+                          ) : (
+                            <FileCheck className="icon-secondary" />
+                          )}
+                          <Badge className={STATUS_COLORS[report.status]}>{report.status}</Badge>
+                        </div>
+                        <CardTitle>{report.title}</CardTitle>
+                        <CardDescription className="report-desc">{report.description.substring(0, 150)}...</CardDescription>
+                      </div>
+                      <div className="report-actions">
+                        {!['under-investigation', 'rejected', 'resolved'].includes(report.status) && (
+                          <>
+                            <Button variant="ghost" size="icon" asChild>
+                              <Link to={`/report/${report.id}/edit`}><Edit className="h-4 w-4" /></Link>
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleDelete(report.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
                         )}
-                        <Badge className={STATUS_COLORS[report.status]}>{report.status}</Badge>
                       </div>
-                      <CardTitle>{report.title}</CardTitle>
-                      <CardDescription className="report-desc">{report.description.substring(0, 150)}...</CardDescription>
                     </div>
-                    <div className="report-actions">
-                      {!['under-investigation', 'rejected', 'resolved'].includes(report.status) && (
-                        <>
-                          <Button variant="ghost" size="icon" asChild>
-                            <Link to={`/report/${report.id}/edit`}><Edit className="h-4 w-4" /></Link>
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(report.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="report-details">
+                      {report.location && (
+                        <div className="report-location">
+                          <MapPin className="h-4 w-4" />
+                          <span>{report.location.lat.toFixed(4)}, {report.location.lng.toFixed(4)}</span>
+                        </div>
                       )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="report-details">
-                    {report.location && (
-                      <div className="report-location"><MapPin className="h-4 w-4" /><span>{report.location.lat.toFixed(4)}, {report.location.lng.toFixed(4)}</span></div>
-                    )}
-                    {report.images && report.images.length > 0 && (
-                      <div className="report-images-grid" style={{ marginTop: '12px' }}>
-                        {report.images.map((image, idx) => (
-                          <div key={idx} style={{ aspectRatio: '1', borderRadius: '8px', overflow: 'hidden', border: '2px solid #e5e7eb' }}>
-                            <img 
-                              src={getImageUrl(image)} 
-                              alt={`Evidence ${idx + 1}`}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
+                      {totalMedia > 0 && (
+                        <div className="media-section">
+                          <div className="media-section-header">
+                            <span className="media-section-title">Media Evidence</span>
+                            <div className="media-type-summary">
+                              <Badge variant="outline" className="media-count">
+                                {totalMedia} {totalMedia === 1 ? 'file' : 'files'}
+                              </Badge>
+                              {mediaCounts.images > 0 && (
+                                <span className="media-type-count">
+                                  <ImageIcon className="h-3 w-3" />
+                                  {mediaCounts.images}
+                                </span>
+                              )}
+                              {mediaCounts.videos > 0 && (
+                                <span className="media-type-count">
+                                  <VideoIcon className="h-3 w-3" />
+                                  {mediaCounts.videos}
+                                </span>
+                              )}
+                              {mediaCounts.audios > 0 && (
+                                <span className="media-type-count">
+                                  <RadioIcon className="h-3 w-3" />
+                                  {mediaCounts.audios}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                    <span className="report-created">Created: {new Date(report.createdAt).toLocaleDateString()}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                          <div className="media-grid">
+                            {report.images.map((media, idx) => {
+                              const mediaType = getMediaType(media);
+                              return (
+                                <div key={idx} className="media-preview">
+                                  {mediaType === 'image' && (
+                                    <img 
+                                      src={getMediaUrl(media)} 
+                                      alt={`Evidence ${idx + 1}`}
+                                      className="media-thumbnail"
+                                    />
+                                  )}
+                                  {mediaType === 'video' && (
+                                    <div className="video-thumbnail">
+                                      <video className="media-thumbnail">
+                                        <source src={getMediaUrl(media)} type="video/mp4" />
+                                      </video>
+                                      <div className="media-overlay">
+                                        <VideoIcon className="h-6 w-6" />
+                                      </div>
+                                    </div>
+                                  )}
+                                  {mediaType === 'audio' && (
+                                    <div className="audio-thumbnail">
+                                      <div className="audio-icon">
+                                        <RadioIcon className="h-8 w-8" />
+                                      </div>
+                                      <div className="media-overlay">
+                                        <span>Audio</span>
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div className="media-badge">
+                                    {getMediaIcon(mediaType)}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      <span className="report-created">Created: {new Date(report.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </main>

@@ -24,6 +24,12 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/api/reports/${id}`,
     DELETE: (id: string) => `/api/reports/${id}`,
     UPDATE_STATUS: (id: string) => `/api/reports/${id}/status`,
+    
+    // Unified media upload endpoint - all file types use the same endpoint
     UPLOAD_IMAGE: (id: string) => `/api/reports/${id}/upload`,
+    UPLOAD_VIDEO: (id: string) => `/api/reports/${id}/upload`,
+    UPLOAD_AUDIO: (id: string) => `/api/reports/${id}/upload`,
+    DELETE_MEDIA: (id: string) => `/api/reports/${id}/media`,
+    UPLOAD_MEDIA: (id: string) => `/api/reports/${id}/upload`,
   },
 };
