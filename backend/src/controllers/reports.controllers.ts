@@ -12,7 +12,7 @@ interface Report {
   title: string;
   description: string;
   location: string | null;
-  images: string;
+  media: string;
   status: string;
   created_at: string;
   updated_at: string;
@@ -51,13 +51,13 @@ interface CreateReportBody {
   title: string;
   description: string;
   type: string;
-  location?: any;
+  location?: unknown;
 }
 
 interface UpdateReportBody {
   title?: string;
   description?: string;
-  location?: any;
+  location?: unknown;
   images?: string[];
 }
 
@@ -74,15 +74,15 @@ const VALID_REPORT_TYPES: string[] = ['red-flag', 'intervention'];
 const VALID_STATUS_VALUES: string[] = ['draft', 'under-investigation', 'rejected', 'resolved'];
 
 // Utility functions
-const parseImages = (images: any): string[] => {
+const parseMedia = (media: unknown): string[] => {
   try {
-    if (Array.isArray(images)) return images;
-    if (typeof images === 'string') {
-      return JSON.parse(images || '[]');
+    if (Array.isArray(media)) return media;
+    if (typeof media === 'string') {
+      return JSON.parse(media || '[]');
     }
     return [];
   } catch (error) {
-    console.error('Error parsing images:', error);
+    console.error('Error parsing media:', error);
     return [];
   }
 };
@@ -95,7 +95,7 @@ const buildReportResponse = (report: Report): ReportResponse => ({
   description: report.description,
   location: report.location,
   status: report.status,
-  images: parseImages(report.images),
+  images: parseMedia(report.media),
   createdAt: report.created_at,
   updatedAt: report.updated_at
 });
@@ -134,8 +134,8 @@ const canEditReport = (report: Report): boolean => {
   return report.status === 'draft';
 };
 
-// Get image paths from uploaded files
-const getImagePaths = (files: Express.Multer.File[]): string[] => {
+// Get media paths from uploaded files
+const getMediaPaths = (files: Express.Multer.File[]): string[] => {
   return files.map(file => `/uploads/${file.filename}`);
 };
 
@@ -164,8 +164,8 @@ const debugFileUpload = (req: Request): void => {
   console.log('=== END DEBUG ===');
 };
 
-// Save base64 images (data URLs or raw base64) to uploads directory and return public paths
-const saveBase64Images = (images: string[]): string[] => {
+// Save base64 media (data URLs or raw base64) to uploads directory and return public paths
+const saveBase64Media = (media: string[]): string[] => {
   const savedPaths: string[] = [];
   const uploadsDir = path.join(process.cwd(), 'uploads');
   if (!fs.existsSync(uploadsDir)) {
@@ -178,26 +178,33 @@ const saveBase64Images = (images: string[]): string[] => {
     'image/png': 'png',
     'image/gif': 'gif',
     'image/webp': 'webp',
+    'video/mp4': 'mp4',
+    'video/webm': 'webm',
+    'video/ogg': 'ogg',
+    'audio/mpeg': 'mp3',
+    'audio/wav': 'wav',
+    'audio/ogg': 'ogg',
+    'audio/mp4': 'm4a',
   };
 
-  images.forEach((img) => {
+  media.forEach((item) => {
     try {
-      let base64 = img;
+      let base64 = item;
       let ext = 'png';
 
-      const match = img.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+      const match = item.match(/^data:(image\/[a-zA-Z+]+|video\/[a-zA-Z+]+|audio\/[a-zA-Z+]+);base64,(.+)$/);
       if (match) {
         const mime = match[1];
         base64 = match[2];
-        ext = extFromMime[mime] || 'png';
+        ext = extFromMime[mime] || 'bin';
       }
 
-      const filename = `img_${Date.now()}_${Math.round(Math.random() * 1e9)}.${ext}`;
+      const filename = `media_${Date.now()}_${Math.round(Math.random() * 1e9)}.${ext}`;
       const filePath = path.join(uploadsDir, filename);
       fs.writeFileSync(filePath, Buffer.from(base64, 'base64'));
       savedPaths.push(`/uploads/${filename}`);
     } catch (e) {
-      console.error('Failed to save base64 image:', e);
+      console.error('Failed to save base64 media:', e);
     }
   });
 
@@ -236,28 +243,28 @@ export const createReport = async (req: Request, res: Response): Promise<void> =
 
     const locationValue: string = location ? JSON.stringify(location) : 'null';
     
-    // Handle uploaded images (multer) or base64 in JSON body
-    let imagePaths: string[] = [];
+    // Handle uploaded media (multer) or base64 in JSON body
+    let mediaPaths: string[] = [];
     if (req.files && Array.isArray(req.files) && (req.files as Express.Multer.File[]).length > 0) {
-      imagePaths = getImagePaths(req.files as Express.Multer.File[]);
-      console.log('Image paths to save to DB:', imagePaths);
+      mediaPaths = getMediaPaths(req.files as Express.Multer.File[]);
+      console.log('Media paths to save to DB:', mediaPaths);
     } else {
-      // Fallback: accept base64 images sent in JSON body
-      const rawImages = (req.body as any).images;
-      const parsed = parseImages(rawImages);
-      const base64s = parsed.filter((s: any) => typeof s === 'string') as string[];
+      // Fallback: accept base64 media sent in JSON body
+      const rawMedia = (req.body as any).images;
+      const parsed = parseMedia(rawMedia);
+      const base64s = parsed.filter((s: unknown) => typeof s === 'string') as string[];
       if (base64s.length) {
-        imagePaths = saveBase64Images(base64s);
-        console.log('Saved base64 images to disk. Paths:', imagePaths);
+        mediaPaths = saveBase64Media(base64s);
+        console.log('Saved base64 media to disk. Paths:', mediaPaths);
       } else {
-        console.log('No images found in request');
+        console.log('No media found in request');
       }
     }
 
-    // Insert the report with generated UUID and image paths
-    const insertQuery = `INSERT INTO reports (id, user_id, title, description, type, location, images, status) 
+    // Insert the report with generated UUID and media paths
+    const insertQuery = `INSERT INTO reports (id, user_id, title, description, type, location, media, status) 
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-    const insertParams = [reportId, userId, title, description, type, locationValue, JSON.stringify(imagePaths), 'draft'];
+    const insertParams = [reportId, userId, title, description, type, locationValue, JSON.stringify(mediaPaths), 'draft'];
     
     console.log('Executing query:', insertQuery);
     console.log('With parameters:', insertParams);
@@ -279,7 +286,7 @@ export const createReport = async (req: Request, res: Response): Promise<void> =
     }
 
     const report: Report = reportResult.rows[0] as Report;
-    console.log('Final report from DB - images field:', report.images);
+    console.log('Final report from DB - media field:', report.media);
 
     res.status(201).json({
       success: true,
@@ -459,15 +466,15 @@ export const updateReport = async (req: Request, res: Response): Promise<void> =
     let description = report.description;
     let location = report.location;
 
-    // Determine images to keep from client (if provided), else start with DB images
-    let existingImages: string[] = parseImages(report.images);
-    if (req.body.existingImages !== undefined) {
+    // Determine media to keep from client (if provided), else start with DB media
+    let existingMedia: string[] = parseMedia(report.media);
+    if (req.body.existingMedia !== undefined) {
       try {
-        existingImages = Array.isArray(req.body.existingImages)
-          ? (req.body.existingImages as unknown as string[])
-          : parseImages(req.body.existingImages);
+        existingMedia = Array.isArray(req.body.existingMedia)
+          ? (req.body.existingMedia as unknown as string[])
+          : parseMedia(req.body.existingMedia);
       } catch (e) {
-        console.error('Error parsing existingImages:', e);
+        console.error('Error parsing existingMedia:', e);
       }
     }
 
@@ -485,29 +492,29 @@ export const updateReport = async (req: Request, res: Response): Promise<void> =
       }
     }
 
-    // Handle new uploaded images - append to existing images
+    // Handle new uploaded media - append to existing media
     if (req.files && Array.isArray(req.files) && (req.files as Express.Multer.File[]).length > 0) {
-      const newImagePaths = getImagePaths(req.files as Express.Multer.File[]);
-      existingImages = [...existingImages, ...newImagePaths];
-      console.log('Added new images. Total images:', existingImages);
+      const newMediaPaths = getMediaPaths(req.files as Express.Multer.File[]);
+      existingMedia = [...existingMedia, ...newMediaPaths];
+      console.log('Added new media. Total media:', existingMedia);
     } else if ((req.body as any)?.images) {
-      const parsed = parseImages((req.body as any).images);
-      const newPaths = saveBase64Images(parsed as string[]);
+      const parsed = parseMedia((req.body as any).images);
+      const newPaths = saveBase64Media(parsed as string[]);
       if (newPaths.length) {
-        existingImages = [...existingImages, ...newPaths];
-        console.log('Added base64 images. Total images:', existingImages);
+        existingMedia = [...existingMedia, ...newPaths];
+        console.log('Added base64 media. Total media:', existingMedia);
       }
     }
 
     // Prepare values for database
     const locationValue = location && location !== 'null' ? JSON.stringify(location) : null;
-    const imagesValue = JSON.stringify(existingImages);
+    const mediaValue = JSON.stringify(existingMedia);
 
     console.log('Final values for DB update:', {
       title,
       description,
       location: locationValue,
-      images: imagesValue
+      media: mediaValue
     });
 
     await query(
@@ -515,10 +522,10 @@ export const updateReport = async (req: Request, res: Response): Promise<void> =
        SET title = ?,
            description = ?,
            location = ?,
-           images = ?,
+           media = ?,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
-      [title, description, locationValue, imagesValue, id]
+      [title, description, locationValue, mediaValue, id]
     );
 
     const updatedResult = await query('SELECT * FROM reports WHERE id = ?', [id]);
