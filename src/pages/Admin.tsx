@@ -254,7 +254,7 @@ const Admin = () => {
                               )}
                             </div>
                           </div>
-                          <div className="media-grid">
+                          <div className="image-grid">
                             {report.images.map((media, idx) => {
                               const mediaType = getMediaType(media);
                               return (
@@ -263,7 +263,7 @@ const Admin = () => {
                                     <img 
                                       src={getMediaUrl(media)} 
                                       alt={`Report evidence ${idx + 1}`}
-                                      className="media-preview"
+                                      className="image-preview"
                                     />
                                   )}
                                   {mediaType === 'video' && (

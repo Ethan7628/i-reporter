@@ -239,11 +239,11 @@ const Dashboard = () => {
                               )}
                             </div>
                           </div>
-                          <div className="media-grid">
+                          <div className="image-grid">
                             {report.images.map((media, idx) => {
                               const mediaType = getMediaType(media);
                               return (
-                                <div key={idx} className="media-preview">
+                                <div key={idx} className="image-preview">
                                   {mediaType === 'image' && (
                                     <img 
                                       src={getMediaUrl(media)} 
