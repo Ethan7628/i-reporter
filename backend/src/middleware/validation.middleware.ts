@@ -29,7 +29,8 @@ const reportSchema = z.object({
     }),
     z.null()
   ]).optional(),
-  images: z.array(z.string()).optional()
+  images: z.array(z.string()).optional(),
+  existingImages: z.array(z.string()).optional()
 });
 
 const statusUpdateSchema = z.object({
@@ -74,6 +75,12 @@ export const validateReport = (req: Request, res: Response, next: NextFunction) 
     }
     if (typeof (req.body as any).existingImages === 'string') {
       try { (req.body as any).existingImages = JSON.parse((req.body as any).existingImages); } catch {}
+    }
+    
+    // For multipart uploads, files are in req.files, not req.body.images
+    // Remove images field from validation if files are being uploaded
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+      delete (req.body as any).images;
     }
   }
   return validate(reportSchema)(req, res, next);
