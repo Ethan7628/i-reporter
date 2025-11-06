@@ -268,22 +268,22 @@ const Admin = () => {
                                     )}
                                     {mediaType === 'video' && (
                                       <div className="video-thumbnail">
-                                        <video className="image-preview" autoPlay>
+                                        <video className="image-preview"  controls>
                                           <source src={getMediaUrl(media)} type="video/mp4" />
                                         </video>
-                                        <div className="media-overlay">
+                                        {/* <div className="media-overlay">
                                           <VideoIcon className="h-6 w-6" />
-                                        </div>
+                                        </div> */}
                                       </div>
                                     )}
                                     {mediaType === 'audio' && (
                                       <div className="audio-thumbnail">
-                                        <audio className="image-preview" controls autoPlay>
+                                        <audio className="image-preview" controls>
                                           <source src={getMediaUrl(media)} type="audio/mpeg" />
                                         </audio>
-                                        <div className="media-overlay">
+                                        {/* <div className="media-overlay">
                                           <RadioIcon className="h-6 w-6" />
-                                        </div>
+                                        </div> */}
                                       </div>
                                     )}
                                     <div className="media-type-indicator">

@@ -393,7 +393,7 @@ const EditReport = () => {
                 {existingMedia.length > 0 && (
                   <div className="existing-media-section">
                     <p className="form-hint">Existing Media:</p>
-                    <div className="media-grid">
+                    <div className="image-grid">
                       {existingMedia.map((media, index) => {
                         const mediaType = getMediaType(media);
                         return (
@@ -402,14 +402,14 @@ const EditReport = () => {
                               <img src={getMediaUrl(media)} alt={`Existing ${index + 1}`} />
                             )}
                             {mediaType === 'video' && (
-                              <video controls autoPlay>
+                              <video controls>
                                 <source src={getMediaUrl(media)} type="video/mp4" />
                                 Your browser does not support the video tag.
                               </video>
                             )}
                             {mediaType === 'audio' && (
                               <div className="audio-preview">
-                                <audio controls autoPlay>
+                                <audio controls >
                                   <source src={getMediaUrl(media)} type="audio/mpeg" />
                                   Your browser does not support the audio tag.
                                 </audio>
@@ -458,7 +458,7 @@ const EditReport = () => {
                   {newMediaPreviews.length > 0 && (
                     <div className="new-media-section">
                       <p className="form-hint">New media to add:</p>
-                      <div className="media-grid">
+                      <div className="image-grid">
                         {newMediaPreviews.map((preview, index) => {
                           const file = newMediaFiles[index];
                           const isImage = file?.type?.startsWith('image/');

@@ -292,7 +292,7 @@ const NewReport = () => {
                   </button>
 
                   {mediaFiles.length > 0 && (
-                    <div className="media-grid">
+                    <div className="image-grid">
                       {mediaFiles.map((preview, index) => {
                         const file = allMediaFiles[index];
                         const isImage = file?.type?.startsWith('image/');
@@ -305,10 +305,13 @@ const NewReport = () => {
                               <img src={preview} alt={`Upload ${index + 1}`} />
                             )}
                             {isVideo && (
+
                               <video controls>
                                 <source src={preview} type={file.type} />
                                 Your browser does not support the video tag.
                               </video>
+
+
                             )}
                             {isAudio && (
                               <div className="audio-preview">
@@ -321,7 +324,7 @@ const NewReport = () => {
                             )}
                             <button
                               type="button"
-                              className="image-remove-btn"
+                              className="media-remove-btn"
                               onClick={() => removeMedia(index)}
                               aria-label="Remove media"
                             >
