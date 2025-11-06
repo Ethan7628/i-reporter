@@ -226,15 +226,9 @@ const EditReport = () => {
         formDataToSend.append('existingMedia', JSON.stringify(existingMedia));
       }
 
-      // Append new media files with proper field names
+      // Append all new media files to the 'images' field (backend handles all media types)
       newMediaFiles.forEach((file) => {
-        if (file.type.startsWith('image/')) {
-          formDataToSend.append('images', file);
-        } else if (file.type.startsWith('video/')) {
-          formDataToSend.append('videos', file);
-        } else if (file.type.startsWith('audio/')) {
-          formDataToSend.append('audios', file);
-        }
+        formDataToSend.append('images', file);
       });
 
       // DEBUG: Check what we're sending

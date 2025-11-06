@@ -23,14 +23,21 @@ const storage = multer.diskStorage({
   }
 });
 
-// File filter for images only
+// File filter for all media types (images, videos, audio)
 const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+  const allowedMimes = [
+    // Images
+    'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+    // Videos
+    'video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo',
+    // Audio
+    'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/webm', 'audio/x-m4a'
+  ];
   
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error(`Invalid file type. Only ${allowedMimes.join(', ')} are allowed.`));
+    cb(new Error(`Invalid file type. Only images, videos, and audio files are allowed.`));
   }
 };
 
@@ -40,7 +47,7 @@ export const upload = multer({
   fileFilter: fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
-    files: 5 // Maximum 5 files (aligned with route)
+    files: 5 // Maximum 5 media files (images, videos, audio)
   }
 });
 
@@ -56,7 +63,7 @@ export const handleUploadError = (error: any, req: Request, res: any, next: any)
     if (error.code === 'LIMIT_FILE_COUNT') {
       return res.status(400).json({
         success: false,
-        error: 'Too many files. Maximum 5 images allowed.'
+        error: 'Too many files. Maximum 5 media files allowed.'
       });
     }
     if (error.code === 'LIMIT_UNEXPECTED_FILE') {

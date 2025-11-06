@@ -115,14 +115,9 @@ const NewReport = () => {
       if (formData.location) {
         fd.append('location', JSON.stringify(formData.location));
       }
+      // Append all media files to the 'images' field (backend handles all media types)
       allMediaFiles.forEach((file) => {
-        if (file.type.startsWith('image/')) {
-          fd.append('images', file);
-        } else if (file.type.startsWith('video/')) {
-          fd.append('videos', file);
-        } else if (file.type.startsWith('audio/')) {
-          fd.append('audios', file);
-        }
+        fd.append('images', file);
       });
 
       const report = await createReport(fd);
