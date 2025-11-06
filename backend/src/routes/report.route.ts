@@ -9,7 +9,7 @@ import {
   updateReportStatus,
 } from '../controllers/reports.controllers';
 import { validateReport } from '../middleware/validation.middleware';
-import { upload } from '../utils/upload';
+import { upload, handleUploadError } from '../utils/upload';
 import { authenticate } from '../middleware/auth.middleware';
 
 const router = express.Router();
@@ -23,10 +23,10 @@ router.get('/user/:userId', getUserReports);
 router.get('/:id', getReportById);
 
 // POST routes with file upload (handles all media types: images, videos, audio)
-router.post('/', upload.array('images', 5), validateReport, createReport);
+router.post('/', upload.array('images', 4), handleUploadError, validateReport, createReport);
 
 // PUT routes with file upload for updates (handles all media types: images, videos, audio)
-router.put('/:id', upload.array('images', 5), updateReport);
+router.put('/:id', upload.array('images', 4), handleUploadError, updateReport);
 
 // PATCH routes (no file upload needed for status updates)
 router.patch('/:id/status', updateReportStatus);

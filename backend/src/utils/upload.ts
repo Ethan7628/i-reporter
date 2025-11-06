@@ -46,8 +46,8 @@ export const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-    files: 5 // Maximum 5 media files (images, videos, audio)
+    fileSize: 50 * 1024 * 1024, // 50MB limit
+    files: 4 // Maximum 4 media files (images, videos, audio)
   }
 });
 
@@ -57,13 +57,13 @@ export const handleUploadError = (error: any, req: Request, res: any, next: any)
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
         success: false,
-        error: 'File too large. Maximum size is 5MB.'
+        error: 'File too large. Maximum size is 50MB.'
       });
     }
     if (error.code === 'LIMIT_FILE_COUNT') {
       return res.status(400).json({
         success: false,
-        error: 'Too many files. Maximum 5 media files allowed.'
+        error: 'Too many files. Maximum 4 media files allowed.'
       });
     }
     if (error.code === 'LIMIT_UNEXPECTED_FILE') {
