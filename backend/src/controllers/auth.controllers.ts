@@ -113,20 +113,19 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
       [email, hashedPassword, firstName, lastName, roleToSet]
     );
 
-    const insertId: string | undefined = result.insertId || result.rows?.[0]?.insertId;
-    
-    if (!insertId) {
+    // Get the newly created user by email instead of insertId
+    const userResult: DatabaseResult = await query(
+      'SELECT id, email, first_name, last_name, role FROM users WHERE email = ?',
+      [email]
+    );
+
+    if (!userResult.rows || userResult.rows.length === 0) {
       res.status(500).json({
         success: false,
-        error: 'Failed to create user'
+        error: 'User created but failed to retrieve user data'
       });
       return;
     }
-
-    const userResult: DatabaseResult = await query(
-      'SELECT id, email, first_name, last_name, role FROM users WHERE id = ?',
-      [insertId]
-    );
 
     const user: User = userResult.rows[0] as User;
     const token: string = generateToken({ 

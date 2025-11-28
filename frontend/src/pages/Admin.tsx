@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useReports } from "@/hooks/useReports";
@@ -22,6 +22,7 @@ const Admin = () => {
   const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
   const isAdmin = user?.role === 'admin';
   const { reports, getAllReports, updateReportStatus, loading: reportsLoading, error } = useReports();
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -204,7 +205,21 @@ const Admin = () => {
                             <Badge className={STATUS_COLORS[report.status]}>{report.status}</Badge>
                           </div>
                           <CardTitle>{report.title}</CardTitle>
-                          <CardDescription className="report-desc">{report.description.substring(0, 200)}...</CardDescription>
+                          <CardDescription className="report-desc">
+                            {report.description.length > 200 ? (
+                              <>
+                                {isExpanded ? report.description : `${report.description.substring(0, 200)}...`}
+                                <button
+                                  onClick={() => setIsExpanded(!isExpanded)}
+                                  className="text-blue-500 hover:text-blue-700 ml-1 text-sm font-medium"
+                                >
+                                  {isExpanded ? 'Read Less' : 'Read More'}
+                                </button>
+                              </>
+                            ) : (
+                              report.description
+                            )}
+                          </CardDescription>
                         </div>
                         <div className="report-controls">
                           <Select value={report.status} onValueChange={(value) => handleStatusChange(report.id, value as ReportStatus)}>
@@ -268,7 +283,7 @@ const Admin = () => {
                                     )}
                                     {mediaType === 'video' && (
                                       <div className="video-thumbnail">
-                                        <video className="image-preview"  controls>
+                                        <video className="image-preview" controls>
                                           <source src={getMediaUrl(media)} type="video/mp4" />
                                         </video>
                                         {/* <div className="media-overlay">
