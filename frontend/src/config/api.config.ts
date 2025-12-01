@@ -11,6 +11,7 @@ export const API_CONFIG = {
 export const API_ENDPOINTS = {
   AUTH: {
     SIGNUP: '/api/auth/signup',
+    VERIFY_OTP: '/api/auth/verify-otp',
     LOGIN: '/api/auth/login',
     LOGOUT: '/api/auth/logout',
     CURRENT_USER: '/api/auth/me',

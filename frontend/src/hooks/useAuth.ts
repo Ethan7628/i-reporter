@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '@/services/auth.service';
-import { User, LoginCredentials, SignupCredentials } from '@/types';
+import { User, LoginCredentials, SignupCredentials, VerifyOTPCredentials } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 export const useAuth = () => {
@@ -71,10 +71,34 @@ export const useAuth = () => {
     }
   }, [toast, navigate]);
 
-  const signup = useCallback(async (credentials: SignupCredentials): Promise<boolean> => {
+  const signup = useCallback(async (credentials: SignupCredentials): Promise<{ success: boolean; message?: string }> => {
     try {
       setLoading(true);
       const response = await authService.signup(credentials);
+      
+      toast({
+        title: "OTP Sent!",
+        description: response.message || "Please check your email for the verification code.",
+      });
+      
+      return { success: true, message: response.message };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Signup failed';
+      toast({
+        title: "Signup failed",
+        description: message,
+        variant: "destructive",
+      });
+      return { success: false };
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  const verifyOTP = useCallback(async (credentials: VerifyOTPCredentials): Promise<boolean> => {
+    try {
+      setLoading(true);
+      const response = await authService.verifyOTP(credentials);
       
       if (response.user) {
         setUser(response.user);
@@ -82,7 +106,7 @@ export const useAuth = () => {
         
         toast({
           title: "Account created!",
-          description: "Your account has been created successfully.",
+          description: `Welcome, ${response.user.firstName}!`,
         });
         
         navigate('/dashboard', { replace: true });
@@ -90,9 +114,9 @@ export const useAuth = () => {
       }
       return false;
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Signup failed';
+      const message = error instanceof Error ? error.message : 'OTP verification failed';
       toast({
-        title: "Signup failed",
+        title: "Verification failed",
         description: message,
         variant: "destructive",
       });
@@ -133,6 +157,7 @@ export const useAuth = () => {
     isAuthenticated,
     login,
     signup,
+    verifyOTP,
     logout,
     requireAuth,
   };

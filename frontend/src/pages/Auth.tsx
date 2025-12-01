@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/hooks/useAuth";
 import { loginSchema, signupSchema } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { Shield } from "lucide-react";
+import { Shield, Mail } from "lucide-react";
 import { ZodError } from "zod";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -15,8 +15,8 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login, signup, isAuthenticated, loading } = useAuth();
-  const [mode, setMode] = useState<'login' | 'signup'>(
+  const { login, signup, verifyOTP, isAuthenticated, loading } = useAuth();
+  const [mode, setMode] = useState<'login' | 'signup' | 'verify-otp'>(
     searchParams.get('mode') === 'signup' ? 'signup' : 'login'
   );
   const [formData, setFormData] = useState({
@@ -24,6 +24,7 @@ const Auth = () => {
     password: '',
     firstName: '',
     lastName: '',
+    otp: '',
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -38,18 +39,20 @@ const Auth = () => {
     setSubmitting(true);
 
     try {
-      let success = false;
-      
       if (mode === 'login') {
         const validated = loginSchema.parse(formData);
-        success = await login(validated);
-      } else {
+        const success = await login(validated);
+        if (success) navigate('/dashboard');
+      } else if (mode === 'signup') {
         const validated = signupSchema.parse(formData);
-        success = await signup(validated);
-      }
-
-      if (success) {
-        navigate('/dashboard');
+        const result = await signup(validated);
+        if (result.success) setMode('verify-otp');
+      } else if (mode === 'verify-otp') {
+        if (!formData.otp || formData.otp.length !== 6) {
+          toast({ title: 'Invalid OTP', description: 'Enter 6-digit code', variant: 'destructive' });
+          return;
+        }
+        await verifyOTP({ email: formData.email, otp: formData.otp });
       }
     } catch (error: unknown) {
       let description = 'Please check your input and try again';
@@ -91,15 +94,42 @@ const Auth = () => {
           <div className="auth-logo">
             <Shield className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="auth-title">{mode === 'login' ? 'Welcome Back' : 'Create Account'}</CardTitle>
+          <CardTitle className="auth-title">
+            {mode === 'login' && 'Welcome Back'}
+            {mode === 'signup' && 'Create Account'}
+            {mode === 'verify-otp' && 'Verify Email'}
+          </CardTitle>
           <CardDescription>
-            {mode === 'login' ? 'Sign in to access your reports' : 'Join the fight against corruption'}
+            {mode === 'login' && 'Sign in to access your reports'}
+            {mode === 'signup' && 'Join the fight against corruption'}
+            {mode === 'verify-otp' && `Enter code sent to ${formData.email}`}
           </CardDescription>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSubmit} className="form-stack">
-            {mode === 'signup' && (
+            {mode === 'verify-otp' ? (
+              <>
+                <div className="flex items-center justify-center mb-6">
+                  <Mail className="h-16 w-16 text-primary" />
+                </div>
+                <div className="form-field">
+                  <Label htmlFor="otp">Verification Code</Label>
+                  <Input 
+                    id="otp" 
+                    type="text"
+                    placeholder="Enter 6-digit code"
+                    maxLength={6}
+                    value={formData.otp} 
+                    onChange={(e) => setFormData({ ...formData, otp: e.target.value.replace(/\D/g, '') })} 
+                    required 
+                    disabled={submitting}
+                    className="text-center text-2xl tracking-widest"
+                  />
+                  <p className="text-sm text-muted-foreground mt-2">Check your email. Code expires in 10 minutes.</p>
+                </div>
+              </>
+            ) : mode === 'signup' && (
               <>
                 <div className="form-field">
                   <Label htmlFor="firstName">First Name</Label>
@@ -149,12 +179,21 @@ const Auth = () => {
             </div>
 
             <Button type="submit" className="auth-btn" disabled={submitting}>
-              {submitting ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Create Account'}
+              {submitting && 'Please wait...'}
+              {!submitting && mode === 'login' && 'Sign In'}
+              {!submitting && mode === 'signup' && 'Send Verification Code'}
+              {!submitting && mode === 'verify-otp' && 'Verify & Create Account'}
             </Button>
           </form>
 
           <div className="auth-footer">
-            {mode === 'login' ? (
+            {mode === 'verify-otp' ? (
+              <p className="small-text">Didn't receive code?{' '}
+                <button type="button" onClick={() => setMode('signup')} className="link-primary" disabled={submitting}>
+                  Resend
+                </button>
+              </p>
+            ) : mode === 'login' ? (
               <p className="small-text">Don't have an account?{' '}
                 <button 
                   type="button" 

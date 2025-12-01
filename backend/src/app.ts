@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.routes';
 import reportRoutes from './routes/report.route';
 import { testConnection } from './utils/database';
+import { initializeEmailTransporter } from './utils/email';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -52,6 +53,9 @@ app.use('/uploads', express.static('uploads'));
 
 // Test database connection
 testConnection();
+
+// Initialize email transporter for sending OTP and notifications
+initializeEmailTransporter();
 
 // Routes
 app.use('/api/auth', authRoutes);

@@ -1,8 +1,20 @@
+/**
+ * Reports Controllers
+ * 
+ * Handles all report-related operations including:
+ * - Creating new reports (red-flag or intervention)
+ * - Retrieving reports (all, by ID, by user)
+ * - Updating reports (content and media)
+ * - Deleting reports
+ * - Updating report status (admin only) with email notifications
+ */
+
 import { Request, Response } from 'express';
 import { query } from '../utils/database.js';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
+import { sendStatusUpdateEmail } from '../utils/email';
 
 // Types
 interface Report {
@@ -589,22 +601,57 @@ export const deleteReport = async (req: Request, res: Response): Promise<void> =
   }
 };
 
+/**
+ * Update Report Status (Admin Only)
+ * 
+ * Allows administrators to change the status of any report
+ * Sends email notification to the report creator when status changes
+ * 
+ * Valid status values:
+ * - 'draft': Initial state, not yet reviewed
+ * - 'under-investigation': Admin is investigating the report
+ * - 'rejected': Report was rejected (invalid claim)
+ * - 'resolved': Issue has been addressed and closed
+ * 
+ * Flow:
+ * 1. Verify user is an admin
+ * 2. Validate status value
+ * 3. Get current report to check old status
+ * 4. Update report status in database
+ * 5. Get user information for email notification
+ * 6. Send email notification to report creator
+ * 7. Return updated report
+ * 
+ * @route PATCH /api/reports/:id/status
+ * @access Admin only
+ * @param {Request} req - Express request with status in body and report ID in params
+ * @param {Response} res - Express response
+ * @returns {Promise<void>}
+ */
 export const updateReportStatus = async (req: Request, res: Response): Promise<void> => {
   try {
+    // Extract report ID from URL parameters
     const { id } = req.params;
+    
+    // Extract new status from request body
     const body: UpdateStatusBody = req.body;
     const { status } = body;
+    
+    // Get authenticated user information
     const authReq = req as AuthRequest;
     const userRole: string = authReq.user.role;
 
+    // Verify user has admin privileges
+    // Only administrators can change report status
     if (userRole !== 'admin') {
       res.status(403).json({
         success: false,
-        error: 'Admin access required'
+        error: 'Admin access required. Only administrators can change report status.'
       });
       return;
     }
 
+    // Validate that the provided status is valid
     if (!VALID_STATUS_VALUES.includes(status)) {
       res.status(400).json({
         success: false,
@@ -613,16 +660,17 @@ export const updateReportStatus = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    await query(
-      `UPDATE reports 
-       SET status = ?, updated_at = CURRENT_TIMESTAMP
-       WHERE id = ?`,
-      [status, id]
+    // Get the current report to check old status and get user info
+    const currentReportResult = await query(
+      `SELECT r.*, u.email, u.first_name 
+       FROM reports r
+       JOIN users u ON r.user_id = u.id
+       WHERE r.id = ?`,
+      [id]
     );
 
-    const result = await query('SELECT * FROM reports WHERE id = ?', [id]);
-
-    if (result.rows.length === 0) {
+    // Check if report exists
+    if (currentReportResult.rows.length === 0) {
       res.status(404).json({
         success: false,
         error: 'Report not found'
@@ -630,12 +678,64 @@ export const updateReportStatus = async (req: Request, res: Response): Promise<v
       return;
     }
 
+    // Get the current report data
+    const currentReport: Report = currentReportResult.rows[0] as Report;
+    const oldStatus = currentReport.status;
+
+    // Update report status in database with timestamp
+    await query(
+      `UPDATE reports 
+       SET status = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [status, id]
+    );
+
+    // Get updated report data
+    const result = await query(
+      `SELECT r.*, u.email, u.first_name, u.last_name 
+       FROM reports r
+       JOIN users u ON r.user_id = u.id
+       WHERE r.id = ?`,
+      [id]
+    );
+
     const updatedReport: Report = result.rows[0] as Report;
 
+    // Send email notification to report creator if email is available
+    // This notifies users when their report status changes
+    if (updatedReport.email && updatedReport.first_name) {
+      try {
+        console.log(`📧 Sending status update email to ${updatedReport.email}...`);
+        
+        const emailSent = await sendStatusUpdateEmail(
+          updatedReport.email,
+          updatedReport.first_name,
+          updatedReport.title,
+          oldStatus,
+          status,
+          updatedReport.type
+        );
+
+        if (emailSent) {
+          console.log(`✅ Status update email sent successfully to ${updatedReport.email}`);
+        } else {
+          console.log(`⚠️  Failed to send status update email to ${updatedReport.email}`);
+        }
+      } catch (emailError) {
+        // Log email error but don't fail the request
+        // Status update should succeed even if email fails
+        console.error('❌ Error sending status update email:', emailError);
+      }
+    }
+
+    // Return updated report data
     res.json({
       success: true,
-      data: buildReportResponse(updatedReport)
+      data: buildReportResponse(updatedReport),
+      message: 'Report status updated successfully. User has been notified via email.'
     });
+
+    console.log(`✅ Report ${id} status changed from "${oldStatus}" to "${status}" by admin`);
   } catch (error) {
     handleDatabaseError(error, res);
   }

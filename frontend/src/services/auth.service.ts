@@ -1,5 +1,5 @@
 import { apiService, API_ENDPOINTS } from './api.service';
-import { LoginCredentials, SignupCredentials, AuthResponse, User } from '@/types';
+import { LoginCredentials, SignupCredentials, AuthResponse, User, VerifyOTPCredentials } from '@/types';
 
 class AuthService {
   private token: string | null = null;
@@ -41,9 +41,9 @@ class AuthService {
     }
   }
 
-  async signup(credentials: SignupCredentials): Promise<AuthResponse> {
+  async signup(credentials: SignupCredentials): Promise<{ message: string }> {
     try {
-      const response = await apiService.post<AuthResponse>(
+      const response = await apiService.post<{ message: string }>(
         API_ENDPOINTS.AUTH.SIGNUP,
         credentials
       );
@@ -52,7 +52,26 @@ class AuthService {
         throw new Error(response.error || 'Signup failed');
       }
 
-      // Store the token if it exists in the response
+      // Signup now only sends OTP, doesn't create user yet
+      return response.data;
+    } catch (error) {
+      this.clearToken();
+      throw error;
+    }
+  }
+
+  async verifyOTP(credentials: VerifyOTPCredentials): Promise<AuthResponse> {
+    try {
+      const response = await apiService.post<AuthResponse>(
+        API_ENDPOINTS.AUTH.VERIFY_OTP,
+        credentials
+      );
+
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'OTP verification failed');
+      }
+
+      // Store the token after successful OTP verification
       if (response.data.token) {
         this.setToken(response.data.token);
       }
