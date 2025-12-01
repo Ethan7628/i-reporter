@@ -14,6 +14,11 @@ export const signupSchema = loginSchema.extend({
 export type LoginCredentials = z.infer<typeof loginSchema>;
 export type SignupCredentials = z.infer<typeof signupSchema>;
 
+export interface VerifyOTPCredentials {
+  email: string;
+  otp: string;
+}
+
 export interface User {
   id: string;
   email: string;
