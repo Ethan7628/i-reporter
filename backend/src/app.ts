@@ -13,7 +13,18 @@ import { initializeEmailTransporter } from './utils/email';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.join(__dirname, '.env') });
+// Load environment variables from multiple possible locations
+// 1) backend/.env (when running compiled JS from backend root)
+// 2) backend/src/.env (when running with ts-node/ts-node-dev)
+const rootEnvPath = path.resolve(process.cwd(), '.env');
+if (fs.existsSync(rootEnvPath)) {
+  dotenv.config({ path: rootEnvPath });
+}
+
+const srcEnvPath = path.resolve(__dirname, '.env');
+if (fs.existsSync(srcEnvPath)) {
+  dotenv.config({ path: srcEnvPath, override: true });
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
