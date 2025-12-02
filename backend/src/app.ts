@@ -14,16 +14,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load environment variables from multiple possible locations
-// 1) backend/.env (when running compiled JS from backend root)
-// 2) backend/src/.env (when running with ts-node/ts-node-dev)
-const rootEnvPath = path.resolve(process.cwd(), '.env');
-if (fs.existsSync(rootEnvPath)) {
-  dotenv.config({ path: rootEnvPath });
-}
+// This supports both TS (src) and compiled (dist) runs
+const envPaths = [
+  // 1) backend/.env or project root .env when running from backend root
+  path.resolve(process.cwd(), '.env'),
+  // 2) backend/src/.env when running compiled JS from backend root
+  path.resolve(process.cwd(), 'src', '.env'),
+  // 3) .env next to the currently running file (useful for ts-node/ts-node-dev)
+  path.resolve(__dirname, '.env'),
+];
 
-const srcEnvPath = path.resolve(__dirname, '.env');
-if (fs.existsSync(srcEnvPath)) {
-  dotenv.config({ path: srcEnvPath, override: true });
+for (const envPath of envPaths) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath, override: true });
+  }
 }
 
 const app = express();
