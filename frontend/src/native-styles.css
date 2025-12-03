@@ -2153,3 +2153,32 @@ textarea,
 /* .video-thumbnail video {
   pointer-events: none;
 } */
+/* Select dropdown professional styling */
+[role="listbox"] {
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+[role="option"] {
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-gray-700);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+[role="option"]:hover {
+  background-color: var(--color-gray-50);
+  color: var(--color-primary);
+}
+
+[role="option"][aria-selected="true"] {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: var(--font-medium);
+}
+
+[role="option"][data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
