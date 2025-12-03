@@ -39,9 +39,23 @@ export const initializeEmailTransporter = (): void => {
       user: emailUser,
       pass: emailPassword,
     },
+    // FIX: Add TLS configuration to handle self-signed certificates
+    tls: {
+      rejectUnauthorized: false // Allow self-signed certificates for development
+    },
+    // Optional: Add debug logging
+    logger: process.env.NODE_ENV === 'development',
+    debug: process.env.NODE_ENV === 'development'
   });
 
-  console.log('✅ Email transporter initialized successfully');
+  // Verify transporter connection
+  transporter.verify(function(error, success) {
+    if (error) {
+      console.error('❌ Email transporter verification failed:', error);
+    } else {
+      console.log('✅ Email transporter initialized and verified successfully');
+    }
+  });
 };
 
 /**
