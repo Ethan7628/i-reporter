@@ -1708,7 +1708,6 @@ textarea,
 
 .audio-preview audio {
   width: 100%;
-  max-width: 120px;
 }
 
 .audio-preview span {
@@ -2191,4 +2190,7 @@ textarea,
 [role="option"][data-disabled] {
   opacity: 0.5;
   cursor: not-allowed;
+}
+.btn-link{
+  justify-self: center;
 }

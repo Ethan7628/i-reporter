@@ -198,7 +198,7 @@ const Auth = () => {
                 <button 
                   type="button" 
                   onClick={() => setMode('signup')} 
-                  className="link-primary"
+                  className="link-primary btn-link"
                   disabled={submitting}
                 >
                   Sign up
@@ -209,7 +209,7 @@ const Auth = () => {
                 <button 
                   type="button" 
                   onClick={() => setMode('login')} 
-                  className="link-primary"
+                  className="link-primary btn-link"
                   disabled={submitting}
                 >
                   Sign in

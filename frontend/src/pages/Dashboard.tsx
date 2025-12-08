@@ -253,22 +253,18 @@ const Dashboard = () => {
                                     )}
                                     {mediaType === 'video' && (
                                       <div className="video-thumbnail">
-                                        <video className="media-thumbnail" autoPlay>
+                                        <video className="media-thumbnail" controls>
                                           <source src={getMediaUrl(media)} type="video/mp4" />
                                         </video>
-                                        <div className="media-overlay">
-                                          <VideoIcon className="h-6 w-6" />
-                                        </div>
+                                        
                                       </div>
                                     )}
                                     {mediaType === 'audio' && (
                                       <div className="audio-thumbnail">
-                                        <audio className="image-preview" controls autoPlay>
+                                        <audio controls>
                                           <source src={getMediaUrl(media)} type="audio/mpeg" />
                                         </audio>
-                                        <div className="media-overlay">
-                                          <RadioIcon className="h-6 w-6" />
-                                        </div>
+                                        
                                       </div>
                                     )}
                                     <div className="media-badge">
