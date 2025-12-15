@@ -2194,3 +2194,6 @@ textarea,
 .btn-link{
   justify-self: center;
 }
+div.report-main > p > button{
+  color: var(--color-primary);
+}
