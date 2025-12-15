@@ -180,55 +180,55 @@ const Admin = () => {
         <main className="container page-content admin-content">
           {/* Stats Cards */}
           {stats && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <Users className="h-5 w-5 text-primary" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <Card className="border-l-4 border-l-primary shadow-md hover:shadow-lg transition-shadow duration-300">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-primary/10 rounded-xl">
+                      <Users className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Total Users</p>
-                      <p className="text-2xl font-bold">{stats.totalUsers}</p>
+                      <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Total Users</p>
+                      <p className="text-3xl font-bold text-foreground">{stats.totalUsers}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-500/10 rounded-lg">
-                      <BarChart3 className="h-5 w-5 text-blue-500" />
+              <Card className="border-l-4 border-l-secondary shadow-md hover:shadow-lg transition-shadow duration-300">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-secondary/10 rounded-xl">
+                      <BarChart3 className="h-6 w-6 text-secondary" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Total Reports</p>
-                      <p className="text-2xl font-bold">{stats.totalReports}</p>
+                      <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Total Reports</p>
+                      <p className="text-3xl font-bold text-foreground">{stats.totalReports}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-500/10 rounded-lg">
-                      <FileCheck className="h-5 w-5 text-green-500" />
+              <Card className="border-l-4 border-l-accent shadow-md hover:shadow-lg transition-shadow duration-300">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-accent/10 rounded-xl">
+                      <FileCheck className="h-6 w-6 text-accent" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Resolved</p>
-                      <p className="text-2xl font-bold">{stats.reportsByStatus.resolved}</p>
+                      <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Resolved</p>
+                      <p className="text-3xl font-bold text-foreground">{stats.reportsByStatus.resolved}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-yellow-500/10 rounded-lg">
-                      <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              <Card className="border-l-4 border-l-destructive shadow-md hover:shadow-lg transition-shadow duration-300">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-destructive/10 rounded-xl">
+                      <AlertTriangle className="h-6 w-6 text-destructive" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Under Investigation</p>
-                      <p className="text-2xl font-bold">{stats.reportsByStatus.underInvestigation}</p>
+                      <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Under Investigation</p>
+                      <p className="text-3xl font-bold text-foreground">{stats.reportsByStatus.underInvestigation}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -450,66 +450,88 @@ const Admin = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <Card>
+                <Card className="shadow-lg border-0 overflow-hidden">
+                  <CardHeader className="bg-muted/50 border-b">
+                    <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                      <Users className="h-5 w-5 text-primary" />
+                      Registered Users ({users.length})
+                    </CardTitle>
+                  </CardHeader>
                   <CardContent className="p-0">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>User</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Role</TableHead>
-                          <TableHead className="text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              <Flag className="h-4 w-4 text-destructive" />
-                              Red Flags
-                            </div>
-                          </TableHead>
-                          <TableHead className="text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              <Wrench className="h-4 w-4 text-blue-500" />
-                              Interventions
-                            </div>
-                          </TableHead>
-                          <TableHead className="text-center">Total Reports</TableHead>
-                          <TableHead>Joined</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {users.map((u) => (
-                          <TableRow key={u.id}>
-                            <TableCell className="font-medium">
-                              {u.firstName} {u.lastName}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {u.email}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>
-                                {u.role}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-destructive/10 text-destructive font-semibold">
-                                {u.redFlagReports}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/10 text-blue-500 font-semibold">
-                                {u.interventionReports}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold">
-                                {u.totalReports}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground text-sm">
-                              {new Date(u.createdAt).toLocaleDateString()}
-                            </TableCell>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/30 hover:bg-muted/30">
+                            <TableHead className="font-semibold text-foreground">User</TableHead>
+                            <TableHead className="font-semibold text-foreground">Email</TableHead>
+                            <TableHead className="font-semibold text-foreground">Role</TableHead>
+                            <TableHead className="text-center font-semibold text-foreground">
+                              <div className="flex items-center justify-center gap-2">
+                                <Flag className="h-4 w-4 text-destructive" />
+                                Red Flags
+                              </div>
+                            </TableHead>
+                            <TableHead className="text-center font-semibold text-foreground">
+                              <div className="flex items-center justify-center gap-2">
+                                <Wrench className="h-4 w-4 text-secondary" />
+                                Interventions
+                              </div>
+                            </TableHead>
+                            <TableHead className="text-center font-semibold text-foreground">Total</TableHead>
+                            <TableHead className="font-semibold text-foreground">Joined</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {users.map((u, index) => (
+                            <TableRow 
+                              key={u.id} 
+                              className={`hover:bg-muted/50 transition-colors ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
+                            >
+                              <TableCell className="font-semibold text-foreground">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                                    {u.firstName.charAt(0)}{u.lastName.charAt(0)}
+                                  </div>
+                                  <span>{u.firstName} {u.lastName}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">
+                                {u.email}
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant={u.role === 'admin' ? 'default' : 'outline'}
+                                  className={u.role === 'admin' ? 'bg-primary text-primary-foreground' : ''}
+                                >
+                                  {u.role === 'admin' ? '🛡️ Admin' : 'User'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <span className="inline-flex items-center justify-center min-w-[2.5rem] h-10 px-3 rounded-lg bg-destructive/10 text-destructive font-bold text-base">
+                                  {u.redFlagReports}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <span className="inline-flex items-center justify-center min-w-[2.5rem] h-10 px-3 rounded-lg bg-secondary/10 text-secondary font-bold text-base">
+                                  {u.interventionReports}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <span className="inline-flex items-center justify-center min-w-[2.5rem] h-10 px-3 rounded-lg bg-primary/10 text-primary font-bold text-base">
+                                  {u.totalReports}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-muted-foreground text-sm">
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{new Date(u.createdAt).toLocaleDateString()}</span>
+                                  <span className="text-xs opacity-70">{new Date(u.createdAt).toLocaleTimeString()}</span>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </CardContent>
                 </Card>
               )}
