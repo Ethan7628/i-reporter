@@ -33,4 +33,8 @@ export const API_ENDPOINTS = {
     DELETE_MEDIA: (id: string) => `/api/reports/${id}/media`,
     UPLOAD_MEDIA: (id: string) => `/api/reports/${id}/upload`,
   },
+  ADMIN: {
+    GET_ALL_USERS: '/api/admin/users',
+    GET_STATS: '/api/admin/stats',
+  },
 };

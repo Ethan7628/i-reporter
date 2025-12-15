@@ -2,19 +2,22 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useReports } from "@/hooks/useReports";
-import { getMediaUrl, getMediaType } from "@/utils/image.utils"; // Updated import
+import { getMediaUrl, getMediaType } from "@/utils/image.utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, LogOut, AlertTriangle, FileCheck, MapPin, Image as ImageIcon, VideoIcon, RadioIcon } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Shield, LogOut, AlertTriangle, FileCheck, MapPin, Image as ImageIcon, VideoIcon, RadioIcon, Users, BarChart3, Flag, Wrench } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { STATUS_COLORS } from "@/utils/constants";
-import { ReportStatus, MediaType } from "@/types";
+import { ReportStatus, MediaType, UserWithReportCount, AdminStats } from "@/types";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { apiService, API_ENDPOINTS } from "@/services/api.service";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -23,6 +26,13 @@ const Admin = () => {
   const isAdmin = user?.role === 'admin';
   const { reports, getAllReports, updateReportStatus, loading: reportsLoading, error } = useReports();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState("reports");
+  
+  // Users data state
+  const [users, setUsers] = useState<UserWithReportCount[]>([]);
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -45,6 +55,42 @@ const Admin = () => {
     }
   }, [isAuthenticated, isAdmin, navigate, toast, getAllReports, authLoading]);
 
+  // Fetch users when users tab is active
+  useEffect(() => {
+    if (isAdmin && activeTab === "users") {
+      fetchUsers();
+      fetchStats();
+    }
+  }, [isAdmin, activeTab]);
+
+  const fetchUsers = async () => {
+    setUsersLoading(true);
+    setUsersError(null);
+    try {
+      const response = await apiService.get<UserWithReportCount[]>(API_ENDPOINTS.ADMIN.GET_ALL_USERS);
+      if (response.success && response.data) {
+        setUsers(response.data);
+      } else {
+        setUsersError(response.error || 'Failed to fetch users');
+      }
+    } catch (err) {
+      setUsersError('Failed to fetch users');
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const response = await apiService.get<AdminStats>(API_ENDPOINTS.ADMIN.GET_STATS);
+      if (response.success && response.data) {
+        setStats(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch stats:', err);
+    }
+  };
+
   const handleStatusChange = async (reportId: string, newStatus: ReportStatus) => {
     try {
       if (import.meta.env.DEV) {
@@ -53,7 +99,6 @@ const Admin = () => {
 
       const updatedReport = await updateReportStatus(reportId, newStatus);
       if (updatedReport) {
-        // Refresh the reports list to show updated status
         await getAllReports();
       }
     } catch (err) {
@@ -100,19 +145,6 @@ const Admin = () => {
     }
   };
 
-  const getMediaTypeLabel = (mediaType: MediaType): string => {
-    switch (mediaType) {
-      case 'image':
-        return 'image';
-      case 'video':
-        return 'video';
-      case 'audio':
-        return 'audio';
-      default:
-        return 'file';
-    }
-  };
-
   if (authLoading) {
     return <LoadingSpinner fullScreen text="Loading admin panel..." />;
   }
@@ -146,178 +178,343 @@ const Admin = () => {
         </header>
 
         <main className="container page-content admin-content">
-          <div className="page-header">
-            <h2 className="page-title">All Reports</h2>
-            <p className="page-subtext">Manage and update the status of all citizen reports</p>
-          </div>
-
-          {error && (
-            <ErrorMessage
-              title="Error loading reports"
-              message={error}
-              onRetry={() => getAllReports()}
-            />
+          {/* Stats Cards */}
+          {stats && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Users className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Users</p>
+                      <p className="text-2xl font-bold">{stats.totalUsers}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500/10 rounded-lg">
+                      <BarChart3 className="h-5 w-5 text-blue-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Reports</p>
+                      <p className="text-2xl font-bold">{stats.totalReports}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-500/10 rounded-lg">
+                      <FileCheck className="h-5 w-5 text-green-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Resolved</p>
+                      <p className="text-2xl font-bold">{stats.reportsByStatus.resolved}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-yellow-500/10 rounded-lg">
+                      <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Under Investigation</p>
+                      <p className="text-2xl font-bold">{stats.reportsByStatus.underInvestigation}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           )}
 
-          {reportsLoading ? (
-            <div className="flex justify-center py-12">
-              <LoadingSpinner size="lg" text="Loading reports..." />
-            </div>
-          ) : reports.length === 0 ? (
-            <Card>
-              <CardContent className="empty-state">
-                <Shield className="empty-icon" />
-                <h3 className="empty-title">No reports yet</h3>
-                <p className="empty-subtext">Reports will appear here as citizens submit them</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="reports-list">
-              {reports.map((report) => {
-                // Count media by type for better display
-                const mediaCounts = {
-                  images: 0,
-                  videos: 0,
-                  audios: 0,
-                };
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 max-w-md mb-6">
+              <TabsTrigger value="reports" className="flex items-center gap-2">
+                <FileCheck className="h-4 w-4" />
+                Reports
+              </TabsTrigger>
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Users
+              </TabsTrigger>
+            </TabsList>
 
-                report.images?.forEach(media => {
-                  const mediaType = getMediaType(media);
-                  if (mediaType === 'image') mediaCounts.images++;
-                  else if (mediaType === 'video') mediaCounts.videos++;
-                  else if (mediaType === 'audio') mediaCounts.audios++;
-                });
+            {/* Reports Tab */}
+            <TabsContent value="reports">
+              <div className="page-header">
+                <h2 className="page-title">All Reports</h2>
+                <p className="page-subtext">Manage and update the status of all citizen reports</p>
+              </div>
 
-                const totalMedia = mediaCounts.images + mediaCounts.videos + mediaCounts.audios;
+              {error && (
+                <ErrorMessage
+                  title="Error loading reports"
+                  message={error}
+                  onRetry={() => getAllReports()}
+                />
+              )}
 
-                return (
-                  <Card key={report.id} className="report-card">
-                    <CardHeader>
-                      <div className="report-row">
-                        <div className="report-main">
-                          <div className="report-meta">
-                            {report.type === 'red-flag' ? (
-                              <AlertTriangle className="icon-destructive" />
-                            ) : (
-                              <FileCheck className="icon-secondary" />
-                            )}
-                            <Badge variant="outline" className="report-type">{report.type}</Badge>
-                            <Badge className={STATUS_COLORS[report.status]}>{report.status}</Badge>
-                          </div>
-                          <CardTitle>{report.title}</CardTitle>
-                          <CardDescription className="report-desc">
-                            {report.description.length > 200 ? (
-                              <>
-                                {isExpanded ? report.description : `${report.description.substring(0, 200)}...`}
-                                <button
-                                  onClick={() => setIsExpanded(!isExpanded)}
-                                  className="text-blue-500 hover:text-blue-700 ml-1 text-sm font-medium"
-                                >
-                                  {isExpanded ? 'Read Less' : 'Read More'}
-                                </button>
-                              </>
-                            ) : (
-                              report.description
-                            )}
-                          </CardDescription>
-                        </div>
-                        <div className="report-controls">
-                          <Select value={report.status} onValueChange={(value) => handleStatusChange(report.id, value as ReportStatus)}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="draft">Draft</SelectItem>
-                              <SelectItem value="under-investigation">Under Investigation</SelectItem>
-                              <SelectItem value="rejected">Rejected</SelectItem>
-                              <SelectItem value="resolved">Resolved</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="report-details">
-                        {report.location && (
-                          <div className="report-location">
-                            <MapPin className="h-4 w-4" />
-                            <span>Location: {report.location.lat.toFixed(4)}, {report.location.lng.toFixed(4)}</span>
-                          </div>
-                        )}
-                        {totalMedia > 0 && (
-                          <>
-                            <div className="report-media-info">
-                              <div className="media-summary">
-                                <span className="media-count">{totalMedia} media file(s) attached:</span>
-                                {mediaCounts.images > 0 && (
-                                  <Badge variant="outline" className="media-type-badge">
-                                    <ImageIcon className="h-3 w-3 mr-1" />
-                                    {mediaCounts.images} image{mediaCounts.images !== 1 ? 's' : ''}
-                                  </Badge>
+              {reportsLoading ? (
+                <div className="flex justify-center py-12">
+                  <LoadingSpinner size="lg" text="Loading reports..." />
+                </div>
+              ) : reports.length === 0 ? (
+                <Card>
+                  <CardContent className="empty-state">
+                    <Shield className="empty-icon" />
+                    <h3 className="empty-title">No reports yet</h3>
+                    <p className="empty-subtext">Reports will appear here as citizens submit them</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="reports-list">
+                  {reports.map((report) => {
+                    const mediaCounts = {
+                      images: 0,
+                      videos: 0,
+                      audios: 0,
+                    };
+
+                    report.images?.forEach(media => {
+                      const mediaType = getMediaType(media);
+                      if (mediaType === 'image') mediaCounts.images++;
+                      else if (mediaType === 'video') mediaCounts.videos++;
+                      else if (mediaType === 'audio') mediaCounts.audios++;
+                    });
+
+                    const totalMedia = mediaCounts.images + mediaCounts.videos + mediaCounts.audios;
+
+                    return (
+                      <Card key={report.id} className="report-card">
+                        <CardHeader>
+                          <div className="report-row">
+                            <div className="report-main">
+                              <div className="report-meta">
+                                {report.type === 'red-flag' ? (
+                                  <AlertTriangle className="icon-destructive" />
+                                ) : (
+                                  <FileCheck className="icon-secondary" />
                                 )}
-                                {mediaCounts.videos > 0 && (
-                                  <Badge variant="outline" className="media-type-badge">
-                                    <VideoIcon className="h-3 w-3 mr-1" />
-                                    {mediaCounts.videos} video{mediaCounts.videos !== 1 ? 's' : ''}
-                                  </Badge>
-                                )}
-                                {mediaCounts.audios > 0 && (
-                                  <Badge variant="outline" className="media-type-badge">
-                                    <RadioIcon className="h-3 w-3 mr-1" />
-                                    {mediaCounts.audios} audio{mediaCounts.audios !== 1 ? 's' : ''}
-                                  </Badge>
-                                )}
+                                <Badge variant="outline" className="report-type">{report.type}</Badge>
+                                <Badge className={STATUS_COLORS[report.status]}>{report.status}</Badge>
                               </div>
+                              <CardTitle>{report.title}</CardTitle>
+                              <CardDescription className="report-desc">
+                                {report.description.length > 200 ? (
+                                  <>
+                                    {isExpanded ? report.description : `${report.description.substring(0, 200)}...`}
+                                    <button
+                                      onClick={() => setIsExpanded(!isExpanded)}
+                                      className="text-blue-500 hover:text-blue-700 ml-1 text-sm font-medium"
+                                    >
+                                      {isExpanded ? 'Read Less' : 'Read More'}
+                                    </button>
+                                  </>
+                                ) : (
+                                  report.description
+                                )}
+                              </CardDescription>
                             </div>
-                            <div className="image-grid">
-                              {report.images.map((media, idx) => {
-                                const mediaType = getMediaType(media);
-                                return (
-                                  <div key={idx} className="media-thumbnail">
-                                    {mediaType === 'image' && (
-                                      <img
-                                        src={getMediaUrl(media)}
-                                        alt={`Report evidence ${idx + 1}`}
-                                        className="media-preview"
-                                      />
+                            <div className="report-controls">
+                              <Select value={report.status} onValueChange={(value) => handleStatusChange(report.id, value as ReportStatus)}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="draft">Draft</SelectItem>
+                                  <SelectItem value="under-investigation">Under Investigation</SelectItem>
+                                  <SelectItem value="rejected">Rejected</SelectItem>
+                                  <SelectItem value="resolved">Resolved</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="report-details">
+                            {report.location && (
+                              <div className="report-location">
+                                <MapPin className="h-4 w-4" />
+                                <span>Location: {report.location.lat.toFixed(4)}, {report.location.lng.toFixed(4)}</span>
+                              </div>
+                            )}
+                            {totalMedia > 0 && (
+                              <>
+                                <div className="report-media-info">
+                                  <div className="media-summary">
+                                    <span className="media-count">{totalMedia} media file(s) attached:</span>
+                                    {mediaCounts.images > 0 && (
+                                      <Badge variant="outline" className="media-type-badge">
+                                        <ImageIcon className="h-3 w-3 mr-1" />
+                                        {mediaCounts.images} image{mediaCounts.images !== 1 ? 's' : ''}
+                                      </Badge>
                                     )}
-                                    {mediaType === 'video' && (
-                                      <div className="video-thumbnail">
-                                        <video className="image-preview" controls>
-                                          <source src={getMediaUrl(media)} type="video/mp4" />
-                                        </video>
-          
-                                      </div>
+                                    {mediaCounts.videos > 0 && (
+                                      <Badge variant="outline" className="media-type-badge">
+                                        <VideoIcon className="h-3 w-3 mr-1" />
+                                        {mediaCounts.videos} video{mediaCounts.videos !== 1 ? 's' : ''}
+                                      </Badge>
                                     )}
-                                    {mediaType === 'audio' && (
-                                      <div className="audio-thumbnail">
-                                        <audio  controls>
-                                          <source src={getMediaUrl(media)} type="audio/mpeg" />
-                                        </audio>
-                                      </div>
+                                    {mediaCounts.audios > 0 && (
+                                      <Badge variant="outline" className="media-type-badge">
+                                        <RadioIcon className="h-3 w-3 mr-1" />
+                                        {mediaCounts.audios} audio{mediaCounts.audios !== 1 ? 's' : ''}
+                                      </Badge>
                                     )}
-                                    <div className="media-type-indicator">
-                                      {getMediaIcon(mediaType)}
-                                    </div>
                                   </div>
-                                );
-                              })}
+                                </div>
+                                <div className="image-grid">
+                                  {report.images.map((media, idx) => {
+                                    const mediaType = getMediaType(media);
+                                    return (
+                                      <div key={idx} className="media-thumbnail">
+                                        {mediaType === 'image' && (
+                                          <img
+                                            src={getMediaUrl(media)}
+                                            alt={`Report evidence ${idx + 1}`}
+                                            className="media-preview"
+                                          />
+                                        )}
+                                        {mediaType === 'video' && (
+                                          <div className="video-thumbnail">
+                                            <video className="image-preview" controls>
+                                              <source src={getMediaUrl(media)} type="video/mp4" />
+                                            </video>
+                                          </div>
+                                        )}
+                                        {mediaType === 'audio' && (
+                                          <div className="audio-thumbnail">
+                                            <audio controls>
+                                              <source src={getMediaUrl(media)} type="audio/mpeg" />
+                                            </audio>
+                                          </div>
+                                        )}
+                                        <div className="media-type-indicator">
+                                          {getMediaIcon(mediaType)}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </>
+                            )}
+                            <div className="report-meta-small">
+                              <span>Created: {new Date(report.createdAt).toLocaleString()}</span>
+                              <span>Updated: {new Date(report.updatedAt).toLocaleString()}</span>
+                              <span>Report ID: {report.id.substring(0, 8)}</span>
+                              <span>User ID: {report.userId.substring(0, 8)}</span>
                             </div>
-                          </>
-                        )}
-                        <div className="report-meta-small">
-                          <span>Created: {new Date(report.createdAt).toLocaleString()}</span>
-                          <span>Updated: {new Date(report.updatedAt).toLocaleString()}</span>
-                          <span>Report ID: {report.id.substring(0, 8)}</span>
-                          <span>User ID: {report.userId.substring(0, 8)}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Users Tab */}
+            <TabsContent value="users">
+              <div className="page-header">
+                <h2 className="page-title">All Users</h2>
+                <p className="page-subtext">View all registered users and their report statistics</p>
+              </div>
+
+              {usersError && (
+                <ErrorMessage
+                  title="Error loading users"
+                  message={usersError}
+                  onRetry={fetchUsers}
+                />
+              )}
+
+              {usersLoading ? (
+                <div className="flex justify-center py-12">
+                  <LoadingSpinner size="lg" text="Loading users..." />
+                </div>
+              ) : users.length === 0 ? (
+                <Card>
+                  <CardContent className="empty-state">
+                    <Users className="empty-icon" />
+                    <h3 className="empty-title">No users yet</h3>
+                    <p className="empty-subtext">Users will appear here once they register</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>User</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Role</TableHead>
+                          <TableHead className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <Flag className="h-4 w-4 text-destructive" />
+                              Red Flags
+                            </div>
+                          </TableHead>
+                          <TableHead className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <Wrench className="h-4 w-4 text-blue-500" />
+                              Interventions
+                            </div>
+                          </TableHead>
+                          <TableHead className="text-center">Total Reports</TableHead>
+                          <TableHead>Joined</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {users.map((u) => (
+                          <TableRow key={u.id}>
+                            <TableCell className="font-medium">
+                              {u.firstName} {u.lastName}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {u.email}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>
+                                {u.role}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-destructive/10 text-destructive font-semibold">
+                                {u.redFlagReports}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/10 text-blue-500 font-semibold">
+                                {u.interventionReports}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold">
+                                {u.totalReports}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">
+                              {new Date(u.createdAt).toLocaleDateString()}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          </Tabs>
         </main>
       </div>
     </ErrorBoundary>

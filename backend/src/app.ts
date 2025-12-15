@@ -7,6 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.routes';
 import reportRoutes from './routes/report.route';
+import adminRoutes from './routes/admin.routes';
 import { testConnection } from './utils/database';
 import { initializeEmailTransporter } from './utils/email';
 
@@ -75,6 +76,7 @@ initializeEmailTransporter();
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
