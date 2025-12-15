@@ -27,7 +27,7 @@ const Admin = () => {
   const { reports, getAllReports, updateReportStatus, loading: reportsLoading, error } = useReports();
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState("reports");
-  
+
   // Users data state
   const [users, setUsers] = useState<UserWithReportCount[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -180,9 +180,9 @@ const Admin = () => {
         <main className="container page-content admin-content">
           {/* Stats Cards */}
           {stats && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="user-stats-grid">
               <Card className="border-l-4 border-l-primary shadow-md hover:shadow-lg transition-shadow duration-300">
-                <CardContent className="p-6">
+                <CardContent className="stats-card-content">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-primary/10 rounded-xl">
                       <Users className="h-6 w-6 text-primary" />
@@ -195,7 +195,7 @@ const Admin = () => {
                 </CardContent>
               </Card>
               <Card className="border-l-4 border-l-secondary shadow-md hover:shadow-lg transition-shadow duration-300">
-                <CardContent className="p-6">
+                <CardContent className="stats-card-content">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-secondary/10 rounded-xl">
                       <BarChart3 className="h-6 w-6 text-secondary" />
@@ -208,7 +208,7 @@ const Admin = () => {
                 </CardContent>
               </Card>
               <Card className="border-l-4 border-l-accent shadow-md hover:shadow-lg transition-shadow duration-300">
-                <CardContent className="p-6">
+                <CardContent className="stats-card-content">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-accent/10 rounded-xl">
                       <FileCheck className="h-6 w-6 text-accent" />
@@ -221,7 +221,7 @@ const Admin = () => {
                 </CardContent>
               </Card>
               <Card className="border-l-4 border-l-destructive shadow-md hover:shadow-lg transition-shadow duration-300">
-                <CardContent className="p-6">
+                <CardContent className="stats-card-content">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-destructive/10 rounded-xl">
                       <AlertTriangle className="h-6 w-6 text-destructive" />
@@ -237,12 +237,12 @@ const Admin = () => {
           )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 max-w-md mb-6">
-              <TabsTrigger value="reports" className="flex items-center gap-2">
+            <TabsList className="grid w-full grid-cols-2 max-w-md mb-6 tablist">
+              <TabsTrigger value="reports" className="tabitem">
                 <FileCheck className="h-4 w-4" />
                 Reports
               </TabsTrigger>
-              <TabsTrigger value="users" className="flex items-center gap-2">
+              <TabsTrigger value="users" className="tabitem">
                 <Users className="h-4 w-4" />
                 Users
               </TabsTrigger>
@@ -457,74 +457,73 @@ const Admin = () => {
                       Registered Users ({users.length})
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <Table>
+                  <CardContent className="users-table-wrapper p-0">
+                    <div className="users-table-container">
+                      <Table className="users-data-table">      
                         <TableHeader>
-                          <TableRow className="bg-muted/30 hover:bg-muted/30">
-                            <TableHead className="font-semibold text-foreground">User</TableHead>
-                            <TableHead className="font-semibold text-foreground">Email</TableHead>
-                            <TableHead className="font-semibold text-foreground">Role</TableHead>
-                            <TableHead className="text-center font-semibold text-foreground">
-                              <div className="flex items-center justify-center gap-2">
-                                <Flag className="h-4 w-4 text-destructive" />
-                                Red Flags
+                          <TableRow className="users-table-header">
+                            <TableHead className="users-table-head users-col-user">User</TableHead>
+                            <TableHead className="users-table-head users-col-email">Email</TableHead>
+                            <TableHead className="users-table-head users-col-role">Role</TableHead>
+                            <TableHead className="users-table-head users-col-redflags">
+                              <div className="users-head-content">
+                                <Flag className="h-4 w-4" />
+                                <span>Red Flags</span>
                               </div>
                             </TableHead>
-                            <TableHead className="text-center font-semibold text-foreground">
-                              <div className="flex items-center justify-center gap-2">
-                                <Wrench className="h-4 w-4 text-secondary" />
-                                Interventions
+                            <TableHead className="users-table-head users-col-interventions">
+                              <div className="users-head-content">
+                                <Wrench className="h-4 w-4" />
+                                <span>Interventions</span>
                               </div>
                             </TableHead>
-                            <TableHead className="text-center font-semibold text-foreground">Total</TableHead>
-                            <TableHead className="font-semibold text-foreground">Joined</TableHead>
+                            <TableHead className="users-table-head users-col-total">Total</TableHead>
+                            <TableHead className="users-table-head users-col-joined">Joined</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {users.map((u, index) => (
-                            <TableRow 
-                              key={u.id} 
-                              className={`hover:bg-muted/50 transition-colors ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
-                            >
-                              <TableCell className="font-semibold text-foreground">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                          {users.map((u) => (
+                            <TableRow key={u.id} className="users-table-row">
+                              <TableCell className="users-table-cell users-cell-user">
+                                <div className="user-avatar-cell">
+                                  <div className="user-avatar">
                                     {u.firstName.charAt(0)}{u.lastName.charAt(0)}
                                   </div>
-                                  <span>{u.firstName} {u.lastName}</span>
+                                  <div className="user-info">
+                                    <div className="user-name">{u.firstName} {u.lastName}</div>
+                                  </div>
                                 </div>
                               </TableCell>
-                              <TableCell className="text-muted-foreground">
+                              <TableCell className="users-table-cell users-cell-email">
                                 {u.email}
                               </TableCell>
-                              <TableCell>
-                                <Badge 
+                              <TableCell className="users-table-cell users-cell-role">
+                                <Badge
                                   variant={u.role === 'admin' ? 'default' : 'outline'}
-                                  className={u.role === 'admin' ? 'bg-primary text-primary-foreground' : ''}
+                                  className={`users-role-badge ${u.role === 'admin' ? 'users-role-admin' : 'users-role-user'}`}
                                 >
                                   {u.role === 'admin' ? '🛡️ Admin' : 'User'}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="text-center">
-                                <span className="inline-flex items-center justify-center min-w-[2.5rem] h-10 px-3 rounded-lg bg-destructive/10 text-destructive font-bold text-base">
+                              <TableCell className="users-table-cell users-cell-redflags">
+                                <div className="users-stat-badge users-stat-danger">
                                   {u.redFlagReports}
-                                </span>
+                                </div>
                               </TableCell>
-                              <TableCell className="text-center">
-                                <span className="inline-flex items-center justify-center min-w-[2.5rem] h-10 px-3 rounded-lg bg-secondary/10 text-secondary font-bold text-base">
+                              <TableCell className="users-table-cell users-cell-interventions">
+                                <div className="users-stat-badge users-stat-secondary">
                                   {u.interventionReports}
-                                </span>
+                                </div>
                               </TableCell>
-                              <TableCell className="text-center">
-                                <span className="inline-flex items-center justify-center min-w-[2.5rem] h-10 px-3 rounded-lg bg-primary/10 text-primary font-bold text-base">
+                              <TableCell className="users-table-cell users-cell-total">
+                                <div className="users-stat-badge users-stat-primary">
                                   {u.totalReports}
-                                </span>
+                                </div>
                               </TableCell>
-                              <TableCell className="text-muted-foreground text-sm">
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{new Date(u.createdAt).toLocaleDateString()}</span>
-                                  <span className="text-xs opacity-70">{new Date(u.createdAt).toLocaleTimeString()}</span>
+                              <TableCell className="users-table-cell users-cell-joined">
+                                <div className="users-date-cell">
+                                  <div className="date">{new Date(u.createdAt).toLocaleDateString()}</div>
+                                  <div className="time">{new Date(u.createdAt).toLocaleTimeString()}</div>
                                 </div>
                               </TableCell>
                             </TableRow>

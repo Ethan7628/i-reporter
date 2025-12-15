@@ -2162,14 +2162,14 @@ textarea,
   pointer-events: none;
 } */
 [role="listbox"] {
- 
+
   background: var(--color-white);
   border: 1px solid var(--color-gray-200);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
 }
 
 [role="option"] {
-   display: flex;
+  display: flex;
   padding: var(--space-3) var(--space-4);
   color: var(--color-gray-700);
   cursor: pointer;
@@ -2191,9 +2191,341 @@ textarea,
   opacity: 0.5;
   cursor: not-allowed;
 }
-.btn-link{
+
+.btn-link {
   justify-self: center;
 }
-div.report-main > p > button{
+
+div.report-main>p>button {
   color: var(--color-primary);
+}
+
+.tablist {
+  display: flex;
+  justify-content: space-evenly;
+  border-bottom: 1px solid var(--color-gray-200);
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-2);
+}
+
+.tabitem {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-medium);
+  color: var(--color-gray-700);
+  transition: all var(--transition-base);
+}
+
+.tabitem:hover {
+  cursor: pointer;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.user-stats-grid {
+  background-color: white;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+}
+.stats-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+/* ============================================
+   USERS DATA TABLE STYLING
+   ============================================ */
+
+.users-table-wrapper {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.users-table-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.users-data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Table Header */
+.users-table-header {
+  background: linear-gradient(
+    135deg,
+    var(--color-gray-50) 0%,
+    var(--color-gray-100) 100%
+  );
+  border-bottom: 2px solid var(--color-gray-200);
+}
+
+.users-table-head {
+  padding: var(--space-4) var(--space-5);
+  text-align: left;
+  font-weight: var(--font-semibold);
+  font-size: var(--text-sm);
+  color: var(--color-gray-700);
+  text-transform: capitalize;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.users-head-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Column-specific widths */
+.users-col-user { min-width: 200px; }
+.users-col-email { min-width: 200px; }
+.users-col-role { min-width: 100px; }
+.users-col-redflags { min-width: 120px; text-align: center; }
+.users-col-interventions { min-width: 140px; text-align: center; }
+.users-col-total { min-width: 100px; text-align: center; }
+.users-col-joined { min-width: 140px; }
+
+/* Table Rows */
+.users-table-row {
+  border-bottom: 1px solid var(--color-gray-200);
+  transition: all var(--transition-base);
+  background-color: var(--color-white);
+}
+
+.users-table-row:hover {
+  background-color: var(--color-gray-50);
+  box-shadow: inset 0 0 0 1px var(--color-gray-100);
+}
+
+.users-table-row:last-child {
+  border-bottom: none;
+}
+
+/* Table Cells */
+.users-table-cell {
+  padding: var(--space-4) var(--space-5);
+  vertical-align: middle;
+  color: var(--color-gray-700);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+/* User Avatar Cell */
+.user-avatar-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.user-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary) 100%);
+  color: var(--color-primary);
+  font-weight: var(--font-bold);
+  font-size: var(--text-sm);
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 123, 131, 0.15);
+}
+
+.user-info {
+  display: flex;
+  /* flex-direction: column; */
+  gap: var(--space-1);
+}
+
+.user-name {
+  font-weight: var(--font-semibold);
+  color: var(--color-gray-900);
+  font-size: var(--text-sm);
+}
+
+/* Email Cell */
+.users-cell-email {
+  color: var(--color-gray-600);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.3px;
+}
+
+/* Role Cell */
+.users-cell-role {
+  text-align: center;
+}
+
+.users-role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  font-weight: var(--font-semibold);
+  font-size: var(--text-xs);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: all var(--transition-base);
+}
+
+.users-role-admin {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  box-shadow: 0 2px 8px rgba(0, 123, 131, 0.2);
+}
+
+.users-role-admin:hover {
+  box-shadow: 0 4px 12px rgba(0, 123, 131, 0.3);
+}
+
+.users-role-user {
+  background-color: transparent;
+  color: var(--color-gray-600);
+  border: 1px solid var(--color-gray-300);
+}
+
+.users-role-user:hover {
+  border-color: var(--color-gray-400);
+  background-color: var(--color-gray-50);
+}
+
+/* Stat Badge */
+.users-stat-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 36px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-bold);
+  font-size: var(--text-sm);
+  transition: all var(--transition-base);
+}
+
+.users-stat-danger {
+  background-color: var(--color-danger-light);
+  color: var(--color-danger);
+  box-shadow: inset 0 0 0 1px rgba(229, 57, 53, 0.2);
+}
+
+.users-stat-danger:hover {
+  background-color: rgba(229, 57, 53, 0.15);
+  transform: scale(1.05);
+}
+
+.users-stat-secondary {
+  background-color: var(--color-secondary-light);
+  color: var(--color-secondary);
+  box-shadow: inset 0 0 0 1px rgba(0, 191, 165, 0.2);
+}
+
+.users-stat-secondary:hover {
+  background-color: rgba(0, 191, 165, 0.15);
+  transform: scale(1.05);
+}
+
+.users-stat-primary {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  box-shadow: inset 0 0 0 1px rgba(0, 123, 131, 0.2);
+}
+
+.users-stat-primary:hover {
+  background-color: rgba(0, 123, 131, 0.15);
+  transform: scale(1.05);
+}
+
+/* Date Cell */
+.users-date-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.users-date-cell .date {
+  font-weight: var(--font-medium);
+  color: var(--color-gray-900);
+  font-size: var(--text-sm);
+}
+
+.users-date-cell .time {
+  font-size: var(--text-xs);
+  color: var(--color-gray-500);
+  font-family: var(--font-mono);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .users-table-head {
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-xs);
+  }
+
+  .users-table-cell {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: var(--text-xs);
+  }
+
+  .users-col-user { min-width: 150px; }
+  .users-col-email { min-width: 160px; }
+  .users-col-role { min-width: 90px; }
+  .users-col-redflags { min-width: 100px; }
+  .users-col-interventions { min-width: 120px; }
+  .users-col-total { min-width: 80px; }
+  .users-col-joined { min-width: 120px; }
+}
+
+@media (max-width: 768px) {
+  .users-table-head {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-xs);
+  }
+
+  .users-table-cell {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-xs);
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: var(--text-xs);
+  }
+
+  .user-name {
+    font-size: var(--text-xs);
+  }
+
+  .users-stat-badge {
+    min-width: 40px;
+    height: 32px;
+    font-size: var(--text-xs);
+  }
+
+  .users-col-user { min-width: 120px; }
+  .users-col-email { min-width: 140px; }
+  .users-col-role { min-width: 80px; }
+  .users-col-redflags { min-width: 90px; }
+  .users-col-interventions { min-width: 100px; }
+  .users-col-total { min-width: 70px; }
+  .users-col-joined { min-width: 100px; }
 }
