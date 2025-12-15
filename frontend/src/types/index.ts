@@ -162,3 +162,28 @@ export type MediaPreview = {
   type: MediaType;
   file?: File;
 };
+
+// ============= Admin Types =============
+export interface UserWithReportCount {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  createdAt: string;
+  totalReports: number;
+  redFlagReports: number;
+  interventionReports: number;
+}
+
+export interface AdminStats {
+  totalUsers: number;
+  totalAdmins: number;
+  totalReports: number;
+  reportsByStatus: {
+    draft: number;
+    underInvestigation: number;
+    rejected: number;
+    resolved: number;
+  };
+}
