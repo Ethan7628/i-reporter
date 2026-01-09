@@ -67,60 +67,66 @@ function SearchControl({ onLocationChange }: { onLocationChange: (location: { la
 
   return (
     <div 
-      className="leaflet-top leaflet-left" 
+      className="leaflet-top leaflet-left location-search-control" 
       style={{ 
         position: 'absolute',
         top: '10px',
         left: '10px',
+        right: '10px',
         zIndex: 1000,
         pointerEvents: 'auto'
       }}
     >
-      <div style={{ 
+      <div className="location-search-box" style={{ 
         background: 'white', 
         borderRadius: 8, 
-        padding: 12, 
+        padding: '10px', 
         boxShadow: '0 2px 10px rgba(0,0,0,0.2)', 
-        minWidth: 280,
-        maxWidth: 400
+        maxWidth: '320px',
+        width: '100%'
       }}>
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="🔍 Search for a location..."
+          placeholder="🔍 Search location..."
           style={{ 
             width: '100%', 
             outline: 'none', 
-            border: '2px solid #4A90E2', 
+            border: '2px solid #007B83', 
             borderRadius: 6, 
-            padding: '8px 12px',
+            padding: '10px 12px',
             fontSize: '14px',
-            fontFamily: 'inherit'
+            fontFamily: 'inherit',
+            minHeight: '44px',
+            boxSizing: 'border-box'
           }}
         />
         {loading && (
-          <div style={{ padding: '8px', fontSize: '14px', color: '#666' }}>
+          <div style={{ padding: '8px', fontSize: '13px', color: '#666' }}>
             Searching...
           </div>
         )}
         {results.length > 0 && (
           <ul style={{ 
             marginTop: 8, 
-            maxHeight: 200, 
+            maxHeight: 160, 
             overflowY: 'auto',
             listStyle: 'none',
-            margin: 0,
-            padding: 0
+            margin: '8px 0 0 0',
+            padding: 0,
+            borderRadius: 6,
+            border: '1px solid #eee'
           }}>
             {results.map((r, idx) => (
               <li 
                 key={idx} 
                 style={{ 
-                  padding: '8px 6px', 
+                  padding: '10px 8px', 
                   cursor: 'pointer', 
                   borderTop: idx === 0 ? 'none' : '1px solid #eee',
-                  fontSize: '13px',
+                  fontSize: '12px',
+                  lineHeight: '1.4',
                   transition: 'background 0.2s'
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.background = '#f0f0f0'}

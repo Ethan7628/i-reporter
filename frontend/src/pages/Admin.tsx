@@ -484,7 +484,7 @@ const Admin = () => {
                         <TableBody>
                           {users.map((u) => (
                             <TableRow key={u.id} className="users-table-row">
-                              <TableCell className="users-table-cell users-cell-user">
+                              <TableCell className="users-table-cell users-cell-user" data-label="User">
                                 <div className="user-avatar-cell">
                                   <div className="user-avatar">
                                     {u.firstName.charAt(0)}{u.lastName.charAt(0)}
@@ -494,10 +494,10 @@ const Admin = () => {
                                   </div>
                                 </div>
                               </TableCell>
-                              <TableCell className="users-table-cell users-cell-email">
+                              <TableCell className="users-table-cell users-cell-email" data-label="Email">
                                 {u.email}
                               </TableCell>
-                              <TableCell className="users-table-cell users-cell-role">
+                              <TableCell className="users-table-cell users-cell-role" data-label="Role">
                                 <Badge
                                   variant={u.role === 'admin' ? 'default' : 'outline'}
                                   className={`users-role-badge ${u.role === 'admin' ? 'users-role-admin' : 'users-role-user'}`}
@@ -505,22 +505,22 @@ const Admin = () => {
                                   {u.role === 'admin' ? '🛡️ Admin' : 'User'}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="users-table-cell users-cell-redflags">
+                              <TableCell className="users-table-cell users-cell-redflags" data-label="Red Flags">
                                 <div className="users-stat-badge users-stat-danger">
                                   {u.redFlagReports}
                                 </div>
                               </TableCell>
-                              <TableCell className="users-table-cell users-cell-interventions">
+                              <TableCell className="users-table-cell users-cell-interventions" data-label="Interventions">
                                 <div className="users-stat-badge users-stat-secondary">
                                   {u.interventionReports}
                                 </div>
                               </TableCell>
-                              <TableCell className="users-table-cell users-cell-total">
+                              <TableCell className="users-table-cell users-cell-total" data-label="Total">
                                 <div className="users-stat-badge users-stat-primary">
                                   {u.totalReports}
                                 </div>
                               </TableCell>
-                              <TableCell className="users-table-cell users-cell-joined">
+                              <TableCell className="users-table-cell users-cell-joined" data-label="Joined">
                                 <div className="users-date-cell">
                                   <div className="date">{new Date(u.createdAt).toLocaleDateString()}</div>
                                   <div className="time">{new Date(u.createdAt).toLocaleTimeString()}</div>
