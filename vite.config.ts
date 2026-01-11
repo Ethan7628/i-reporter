@@ -2,20 +2,26 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
-export default defineConfig({
+// https://vitejs.dev/config/
+export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8080,
+    port: 3000,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+      },
+      '/uploads': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [react()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./frontend/src"),
+      "@": path.resolve(__dirname, "./src"),
     },
   },
-  root: ".",
-  publicDir: "frontend/public",
-  build: {
-    outDir: "dist",
-  },
-});
+}));
